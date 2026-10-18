@@ -1,0 +1,1357 @@
+{
+  "description": "Labelled terminal screens for Codex and Claude Code activity detection.",
+  "cases": [
+    {
+      "id": "codex/ready",
+      "agent": "codex",
+      "text": "› Explain the code",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/busy",
+      "agent": "codex",
+      "text": "• Working (8s • esc to interrupt)\n› Explain the code",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/busy-custom-label",
+      "agent": "codex",
+      "text": "• Reviewing permissions (2m 8s • ctrl+c to interrupt)\n› Explain the code",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/busy-reduced-motion",
+      "agent": "codex",
+      "text": "Reviewing changes (8s)\n› Explain the code",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/busy-queued",
+      "agent": "codex",
+      "text": "• Working (8s • esc to interrupt)\n• Queued follow-up inputs\n  fix tests\n› next",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/busy-sparkles",
+      "agent": "codex",
+      "text": "• Working (8s • esc to interrupt)\n›⠁queued followup",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/busy-remapped-interrupt",
+      "agent": "codex",
+      "text": "• Planning changes (1h 2m 8s • alt+x to interrupt) · queue 1\n›",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/approval",
+      "agent": "codex",
+      "text": "Would you like to run this command?\n❯ 1. Yes\n  2. No\nPress enter to confirm or esc to cancel",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/question",
+      "agent": "codex",
+      "text": "› previous prompt\nWhich database?\nPostgreSQL\nenter to submit answer",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/question-all",
+      "agent": "codex",
+      "text": "Questions\nenter to submit all",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/allow-command",
+      "agent": "codex",
+      "text": "Allow command?",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/search-picker",
+      "agent": "codex",
+      "text": "All Results\nFilesystem Only\nPlugins",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/weak-yes-no",
+      "agent": "codex",
+      "text": "Continue? [y/n]",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/weak-yes-y",
+      "agent": "codex",
+      "text": "Continue? yes (y)",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/weak-question",
+      "agent": "codex",
+      "text": "Would you like to proceed?\n❯ Yes\nNo",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/trust-legacy",
+      "agent": "codex",
+      "text": "> You are in /project\nDo you trust the contents of this directory?\nYes",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/trust-modern",
+      "agent": "codex",
+      "text": "Folder access\nTrust this folder?\nCodex can read, edit, and run files here\nTrust and continue",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/trust-modern-enter",
+      "agent": "codex",
+      "text": "Folder access\nTrust this folder?\nCodex can read, edit, and run files here\nenter continue",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/update-legacy",
+      "agent": "codex",
+      "text": "Update available!\nUpdate now\nSkip until next version\nPress enter to continue",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/update-modern",
+      "agent": "codex",
+      "text": "Update available · 0.159\nUpdate now\nenter continue · esc skip",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/update-history",
+      "agent": "codex",
+      "text": "Updated successfully.\nUpdate available!\n›",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/completed",
+      "agent": "codex",
+      "text": "• Working (8s • esc to interrupt)\n• Finished successfully.\n›",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/old-approval",
+      "agent": "codex",
+      "text": "Would you like to run this command?\nPress enter to confirm or esc to cancel\n• Done.\n›",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/quoted-approval",
+      "agent": "codex",
+      "text": "› Explain what 'press enter to confirm' means",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/quoted-choice",
+      "agent": "codex",
+      "text": "› Would you like to proceed? [y/n]",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/quoted-working",
+      "agent": "codex",
+      "text": "› Describe Working (8s • esc to interrupt)",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/old-weak-approval",
+      "agent": "codex",
+      "text": "Would you like to proceed?\n❯ Yes\n• Done\n›",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/sparkle-quoted-choice",
+      "agent": "codex",
+      "text": "›⠁Would you like to proceed? [y/n]",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/reconnect-failed",
+      "agent": "codex",
+      "text": "• Reconnect failed — check the endpoint, then relaunch (10s)\n›",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/new-response-after-old-prompt",
+      "agent": "codex",
+      "text": "› old input\n• Working (8s • esc to interrupt)",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/history",
+      "agent": "codex",
+      "text": "› old prompt\n↑/↓ to scroll  pgup/pgdn to scroll  home/end to jump  q to quit\nesc to edit prev",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "codex/history-alternate",
+      "agent": "codex",
+      "text": "› old prompt\n↑/↓ to scroll  pgup/pgdn to scroll  home/end to jump  q to quit\nesc/← to edit prev",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "codex/title-working",
+      "agent": "codex",
+      "text": "›",
+      "title": "⠙ Fix tests | project",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/title-working-middle",
+      "agent": "codex",
+      "text": "›",
+      "title": "Codex ⠹ Fix tests",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/title-waiting",
+      "agent": "codex",
+      "text": "›",
+      "title": "[ ! ] Action Required | Fix tests | project",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/title-idle",
+      "agent": "codex",
+      "text": "›",
+      "title": "Fix tests | project",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/title-waiting-beats-working",
+      "agent": "codex",
+      "text": "• Working (8s • esc to interrupt)\n›",
+      "title": "Action Required | Fix tests",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/title-working-beats-history",
+      "agent": "codex",
+      "text": "↑/↓ to scroll  q to quit  esc to edit prev",
+      "title": "⠙ Fix tests",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/unmatched-log",
+      "agent": "codex",
+      "text": "Processing log",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/ready",
+      "agent": "claude",
+      "text": "────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/ready-typed",
+      "agent": "claude",
+      "text": "────────────────\n❯ Explain the code\n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/busy",
+      "agent": "claude",
+      "text": "✻ Thinking… (8s)\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-paused",
+      "agent": "claude",
+      "text": "⏸ Running command · esc to interrupt\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-playing",
+      "agent": "claude",
+      "text": "⏵ Running command · esc to interrupt\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-42",
+      "agent": "claude",
+      "text": "* Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-183",
+      "agent": "claude",
+      "text": "· Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-10018",
+      "agent": "claude",
+      "text": "✢ Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-10035",
+      "agent": "claude",
+      "text": "✳ Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-10038",
+      "agent": "claude",
+      "text": "✶ Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-10043",
+      "agent": "claude",
+      "text": "✻ Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-10045",
+      "agent": "claude",
+      "text": "✽ Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/background-agents",
+      "agent": "claude",
+      "text": "✻ Waiting for 2 background agents to finish\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/background-agent",
+      "agent": "claude",
+      "text": "* Waiting for 1 background agent to finish\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/background-mcp",
+      "agent": "claude",
+      "text": "✻ Processing · 2 MCP tasks still running\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/background-mcp-wrapped",
+      "agent": "claude",
+      "text": "✻ Processing\n  · 2 MCP tasks\n  still running\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/btw-overlay",
+      "agent": "claude",
+      "text": "/btw quick question\nThinking\nesc to close",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/approval-form",
+      "agent": "claude",
+      "text": "old output\n────────────────\nChoose option\nEnter to confirm · Esc to cancel",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/selection-form",
+      "agent": "claude",
+      "text": "────────────────\nChoose option\nEnter to select · tab/arrow keys to navigate · Esc to cancel",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/named-session-form",
+      "agent": "claude",
+      "text": "old output\nEnter to confirm · Esc to cancel\n───────── named-session",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/named-session-tasks",
+      "agent": "claude",
+      "text": "Enter to select · arrow keys to navigate · Esc to cancel\n───────── named-session\n  3 tasks (1 done, 1 in progress, 1 open)\n  ✔ finished\n  ◼ active\n  ◻ pending\n  … +2 pending",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/named-session-wrapped-controls",
+      "agent": "claude",
+      "text": "Enter to select · arrow\nkeys to navigate · Esc to cancel\n───────── named-session",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/named-session-stale",
+      "agent": "claude",
+      "text": "Enter to confirm · Esc to cancel\n───────── named-session\nnew response",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/dynamic-workflow",
+      "agent": "claude",
+      "text": "Run a dynamic workflow?\nEsc to cancel",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/mcp-elicitation",
+      "agent": "claude",
+      "text": "MCP server \"database\" requests your input\n❯ Accept\nDecline\nEsc to cancel",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/mcp-elicitation-curly",
+      "agent": "claude",
+      "text": "MCP server “database” requests your input\nAccept\n❯ Decline\nEsc to cancel",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/bash-approval",
+      "agent": "claude",
+      "text": "Bash command\nDo you want to proceed?\n❯ 1. Yes\n  2. No",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/bash-approval-three",
+      "agent": "claude",
+      "text": "Bash(rm)\nDo you want to proceed?\n❯ 1. Yes\n2. Yes, and don't ask again\n3. No",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/bash-selected-no",
+      "agent": "claude",
+      "text": "Bash command\nDo you want to proceed?\n1. Yes\n❯ 2. No",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/generic-approval",
+      "agent": "claude",
+      "text": "────────────────\nDo you want to proceed?\n❯ 1. Yes\n2. No\nEsc to cancel",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/legacy-blocker",
+      "agent": "claude",
+      "text": "Waiting for permission",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/legacy-connection",
+      "agent": "claude",
+      "text": "Do you want to allow this connection?",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/history",
+      "agent": "claude",
+      "text": "Showing detailed transcript\nctrl+o to toggle",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "claude/history-new",
+      "agent": "claude",
+      "text": "Showing detailed transcript\nctrl+e show all",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "claude/history-scroll",
+      "agent": "claude",
+      "text": "Showing detailed transcript\n↑↓ scroll",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "claude/model-picker",
+      "agent": "claude",
+      "text": "Select model\nEnter to set as default\nEsc to cancel",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "claude/title-working",
+      "agent": "claude",
+      "text": "",
+      "title": "⠙ Fix tests",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/title-working-new",
+      "agent": "claude",
+      "text": "",
+      "title": "◐ Fix tests",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/title-idle",
+      "agent": "claude",
+      "text": "",
+      "title": "✳ Fix tests",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/progress-idle",
+      "agent": "claude",
+      "text": "",
+      "title": "",
+      "progress": "4;0",
+      "state": "idle"
+    },
+    {
+      "id": "claude/old-dialog-before-prompt",
+      "agent": "claude",
+      "text": "Do you want to proceed?\n1. Yes\n2. No\nEsc to cancel\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/quoted-dialog",
+      "agent": "claude",
+      "text": "────────────────\n❯ Explain \"Do you want to proceed? Enter to confirm\"\n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/quoted-spinner",
+      "agent": "claude",
+      "text": "────────────────\n❯ ✻ Thinking… (8s)\n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/quoted-tasks",
+      "agent": "claude",
+      "text": "────────────────\n❯ ✻ Waiting for 2 background agents to finish\n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/old-working-before-prompt",
+      "agent": "claude",
+      "text": "✻ Thinking… (8s)\n• Finished\n────────────────\n❯ \n────────────────\n? for shortcuts",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/mcp-permission-over-background",
+      "agent": "claude",
+      "text": "✻ Processing · 2 MCP tasks still running\n────────────────\nDo you want to proceed?\n❯ 1. Yes\n2. No\nEsc to cancel",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/unmatched-log",
+      "agent": "claude",
+      "text": "Processing log",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/ready/blank-rows",
+      "agent": "codex",
+      "text": "\n\n› Explain the code\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/busy/blank-rows",
+      "agent": "codex",
+      "text": "\n\n• Working (8s • esc to interrupt)\n› Explain the code\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/busy-custom-label/blank-rows",
+      "agent": "codex",
+      "text": "\n\n• Reviewing permissions (2m 8s • ctrl+c to interrupt)\n› Explain the code\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/busy-reduced-motion/blank-rows",
+      "agent": "codex",
+      "text": "\n\nReviewing changes (8s)\n› Explain the code\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/busy-queued/blank-rows",
+      "agent": "codex",
+      "text": "\n\n• Working (8s • esc to interrupt)\n• Queued follow-up inputs\n  fix tests\n› next\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/busy-sparkles/blank-rows",
+      "agent": "codex",
+      "text": "\n\n• Working (8s • esc to interrupt)\n›⠁queued followup\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/busy-remapped-interrupt/blank-rows",
+      "agent": "codex",
+      "text": "\n\n• Planning changes (1h 2m 8s • alt+x to interrupt) · queue 1\n›\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/approval/blank-rows",
+      "agent": "codex",
+      "text": "\n\nWould you like to run this command?\n❯ 1. Yes\n  2. No\nPress enter to confirm or esc to cancel\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/question/blank-rows",
+      "agent": "codex",
+      "text": "\n\n› previous prompt\nWhich database?\nPostgreSQL\nenter to submit answer\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/question-all/blank-rows",
+      "agent": "codex",
+      "text": "\n\nQuestions\nenter to submit all\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/allow-command/blank-rows",
+      "agent": "codex",
+      "text": "\n\nAllow command?\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/search-picker/blank-rows",
+      "agent": "codex",
+      "text": "\n\nAll Results\nFilesystem Only\nPlugins\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/weak-yes-no/blank-rows",
+      "agent": "codex",
+      "text": "\n\nContinue? [y/n]\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/weak-yes-y/blank-rows",
+      "agent": "codex",
+      "text": "\n\nContinue? yes (y)\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/weak-question/blank-rows",
+      "agent": "codex",
+      "text": "\n\nWould you like to proceed?\n❯ Yes\nNo\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/trust-legacy/blank-rows",
+      "agent": "codex",
+      "text": "\n\n> You are in /project\nDo you trust the contents of this directory?\nYes\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/trust-modern/blank-rows",
+      "agent": "codex",
+      "text": "\n\nFolder access\nTrust this folder?\nCodex can read, edit, and run files here\nTrust and continue\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/trust-modern-enter/blank-rows",
+      "agent": "codex",
+      "text": "\n\nFolder access\nTrust this folder?\nCodex can read, edit, and run files here\nenter continue\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/update-legacy/blank-rows",
+      "agent": "codex",
+      "text": "\n\nUpdate available!\nUpdate now\nSkip until next version\nPress enter to continue\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/update-modern/blank-rows",
+      "agent": "codex",
+      "text": "\n\nUpdate available · 0.159\nUpdate now\nenter continue · esc skip\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/update-history/blank-rows",
+      "agent": "codex",
+      "text": "\n\nUpdated successfully.\nUpdate available!\n›\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/completed/blank-rows",
+      "agent": "codex",
+      "text": "\n\n• Working (8s • esc to interrupt)\n• Finished successfully.\n›\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/old-approval/blank-rows",
+      "agent": "codex",
+      "text": "\n\nWould you like to run this command?\nPress enter to confirm or esc to cancel\n• Done.\n›\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/quoted-approval/blank-rows",
+      "agent": "codex",
+      "text": "\n\n› Explain what 'press enter to confirm' means\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/quoted-choice/blank-rows",
+      "agent": "codex",
+      "text": "\n\n› Would you like to proceed? [y/n]\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/quoted-working/blank-rows",
+      "agent": "codex",
+      "text": "\n\n› Describe Working (8s • esc to interrupt)\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/old-weak-approval/blank-rows",
+      "agent": "codex",
+      "text": "\n\nWould you like to proceed?\n❯ Yes\n• Done\n›\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/sparkle-quoted-choice/blank-rows",
+      "agent": "codex",
+      "text": "\n\n›⠁Would you like to proceed? [y/n]\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/reconnect-failed/blank-rows",
+      "agent": "codex",
+      "text": "\n\n• Reconnect failed — check the endpoint, then relaunch (10s)\n›\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/new-response-after-old-prompt/blank-rows",
+      "agent": "codex",
+      "text": "\n\n› old input\n• Working (8s • esc to interrupt)\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/history/blank-rows",
+      "agent": "codex",
+      "text": "\n\n› old prompt\n↑/↓ to scroll  pgup/pgdn to scroll  home/end to jump  q to quit\nesc to edit prev\n\n",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "codex/history-alternate/blank-rows",
+      "agent": "codex",
+      "text": "\n\n› old prompt\n↑/↓ to scroll  pgup/pgdn to scroll  home/end to jump  q to quit\nesc/← to edit prev\n\n",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "codex/title-working/blank-rows",
+      "agent": "codex",
+      "text": "\n\n›\n\n",
+      "title": "⠙ Fix tests | project",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/title-working-middle/blank-rows",
+      "agent": "codex",
+      "text": "\n\n›\n\n",
+      "title": "Codex ⠹ Fix tests",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "codex/title-waiting/blank-rows",
+      "agent": "codex",
+      "text": "\n\n›\n\n",
+      "title": "[ ! ] Action Required | Fix tests | project",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/title-idle/blank-rows",
+      "agent": "codex",
+      "text": "\n\n›\n\n",
+      "title": "Fix tests | project",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "codex/title-waiting-beats-working/blank-rows",
+      "agent": "codex",
+      "text": "\n\n• Working (8s • esc to interrupt)\n›\n\n",
+      "title": "Action Required | Fix tests",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "codex/title-working-beats-history/blank-rows",
+      "agent": "codex",
+      "text": "\n\n↑/↓ to scroll  q to quit  esc to edit prev\n\n",
+      "title": "⠙ Fix tests",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/ready/blank-rows",
+      "agent": "claude",
+      "text": "\n\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/ready-typed/blank-rows",
+      "agent": "claude",
+      "text": "\n\n────────────────\n❯ Explain the code\n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/busy/blank-rows",
+      "agent": "claude",
+      "text": "\n\n✻ Thinking… (8s)\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-paused/blank-rows",
+      "agent": "claude",
+      "text": "\n\n⏸ Running command · esc to interrupt\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-playing/blank-rows",
+      "agent": "claude",
+      "text": "\n\n⏵ Running command · esc to interrupt\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-42/blank-rows",
+      "agent": "claude",
+      "text": "\n\n* Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-183/blank-rows",
+      "agent": "claude",
+      "text": "\n\n· Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-10018/blank-rows",
+      "agent": "claude",
+      "text": "\n\n✢ Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-10035/blank-rows",
+      "agent": "claude",
+      "text": "\n\n✳ Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-10038/blank-rows",
+      "agent": "claude",
+      "text": "\n\n✶ Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-10043/blank-rows",
+      "agent": "claude",
+      "text": "\n\n✻ Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/busy-symbol-10045/blank-rows",
+      "agent": "claude",
+      "text": "\n\n✽ Thinking…\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/background-agents/blank-rows",
+      "agent": "claude",
+      "text": "\n\n✻ Waiting for 2 background agents to finish\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/background-agent/blank-rows",
+      "agent": "claude",
+      "text": "\n\n* Waiting for 1 background agent to finish\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/background-mcp/blank-rows",
+      "agent": "claude",
+      "text": "\n\n✻ Processing · 2 MCP tasks still running\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/background-mcp-wrapped/blank-rows",
+      "agent": "claude",
+      "text": "\n\n✻ Processing\n  · 2 MCP tasks\n  still running\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/btw-overlay/blank-rows",
+      "agent": "claude",
+      "text": "\n\n/btw quick question\nThinking\nesc to close\n\n",
+      "title": "",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/approval-form/blank-rows",
+      "agent": "claude",
+      "text": "\n\nold output\n────────────────\nChoose option\nEnter to confirm · Esc to cancel\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/selection-form/blank-rows",
+      "agent": "claude",
+      "text": "\n\n────────────────\nChoose option\nEnter to select · tab/arrow keys to navigate · Esc to cancel\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/named-session-form/blank-rows",
+      "agent": "claude",
+      "text": "\n\nold output\nEnter to confirm · Esc to cancel\n───────── named-session\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/named-session-tasks/blank-rows",
+      "agent": "claude",
+      "text": "\n\nEnter to select · arrow keys to navigate · Esc to cancel\n───────── named-session\n  3 tasks (1 done, 1 in progress, 1 open)\n  ✔ finished\n  ◼ active\n  ◻ pending\n  … +2 pending\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/named-session-wrapped-controls/blank-rows",
+      "agent": "claude",
+      "text": "\n\nEnter to select · arrow\nkeys to navigate · Esc to cancel\n───────── named-session\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/named-session-stale/blank-rows",
+      "agent": "claude",
+      "text": "\n\nEnter to confirm · Esc to cancel\n───────── named-session\nnew response\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/dynamic-workflow/blank-rows",
+      "agent": "claude",
+      "text": "\n\nRun a dynamic workflow?\nEsc to cancel\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/mcp-elicitation/blank-rows",
+      "agent": "claude",
+      "text": "\n\nMCP server \"database\" requests your input\n❯ Accept\nDecline\nEsc to cancel\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/mcp-elicitation-curly/blank-rows",
+      "agent": "claude",
+      "text": "\n\nMCP server “database” requests your input\nAccept\n❯ Decline\nEsc to cancel\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/bash-approval/blank-rows",
+      "agent": "claude",
+      "text": "\n\nBash command\nDo you want to proceed?\n❯ 1. Yes\n  2. No\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/bash-approval-three/blank-rows",
+      "agent": "claude",
+      "text": "\n\nBash(rm)\nDo you want to proceed?\n❯ 1. Yes\n2. Yes, and don't ask again\n3. No\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/bash-selected-no/blank-rows",
+      "agent": "claude",
+      "text": "\n\nBash command\nDo you want to proceed?\n1. Yes\n❯ 2. No\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/generic-approval/blank-rows",
+      "agent": "claude",
+      "text": "\n\n────────────────\nDo you want to proceed?\n❯ 1. Yes\n2. No\nEsc to cancel\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/legacy-blocker/blank-rows",
+      "agent": "claude",
+      "text": "\n\nWaiting for permission\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/legacy-connection/blank-rows",
+      "agent": "claude",
+      "text": "\n\nDo you want to allow this connection?\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    },
+    {
+      "id": "claude/history/blank-rows",
+      "agent": "claude",
+      "text": "\n\nShowing detailed transcript\nctrl+o to toggle\n\n",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "claude/history-new/blank-rows",
+      "agent": "claude",
+      "text": "\n\nShowing detailed transcript\nctrl+e show all\n\n",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "claude/history-scroll/blank-rows",
+      "agent": "claude",
+      "text": "\n\nShowing detailed transcript\n↑↓ scroll\n\n",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "claude/model-picker/blank-rows",
+      "agent": "claude",
+      "text": "\n\nSelect model\nEnter to set as default\nEsc to cancel\n\n",
+      "title": "",
+      "progress": "",
+      "state": "preserve"
+    },
+    {
+      "id": "claude/title-working/blank-rows",
+      "agent": "claude",
+      "text": "\n\n\n\n",
+      "title": "⠙ Fix tests",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/title-working-new/blank-rows",
+      "agent": "claude",
+      "text": "\n\n\n\n",
+      "title": "◐ Fix tests",
+      "progress": "",
+      "state": "working"
+    },
+    {
+      "id": "claude/title-idle/blank-rows",
+      "agent": "claude",
+      "text": "\n\n\n\n",
+      "title": "✳ Fix tests",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/old-dialog-before-prompt/blank-rows",
+      "agent": "claude",
+      "text": "\n\nDo you want to proceed?\n1. Yes\n2. No\nEsc to cancel\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/quoted-dialog/blank-rows",
+      "agent": "claude",
+      "text": "\n\n────────────────\n❯ Explain \"Do you want to proceed? Enter to confirm\"\n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/quoted-spinner/blank-rows",
+      "agent": "claude",
+      "text": "\n\n────────────────\n❯ ✻ Thinking… (8s)\n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/quoted-tasks/blank-rows",
+      "agent": "claude",
+      "text": "\n\n────────────────\n❯ ✻ Waiting for 2 background agents to finish\n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/old-working-before-prompt/blank-rows",
+      "agent": "claude",
+      "text": "\n\n✻ Thinking… (8s)\n• Finished\n────────────────\n❯ \n────────────────\n? for shortcuts\n\n",
+      "title": "",
+      "progress": "",
+      "state": "idle"
+    },
+    {
+      "id": "claude/mcp-permission-over-background/blank-rows",
+      "agent": "claude",
+      "text": "\n\n✻ Processing · 2 MCP tasks still running\n────────────────\nDo you want to proceed?\n❯ 1. Yes\n2. No\nEsc to cancel\n\n",
+      "title": "",
+      "progress": "",
+      "state": "waiting"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "name": "ducks",
+  "version": "0.1.0",
+  "description": "Places and terminal sessions for CLI agents",
+  "type": "module",
+  "private": true,
+  "license": "UNLICENSED",
+  "bin": {
+    "ducks": "bin/ducks.js"
+  },
+  "files": [
+    "bin",
+    "dist/src",
+    "README.md",
+    "scripts/patch-unicode.mjs"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "start": "node bin/ducks.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"{src,test}/**/*.ts\" --max-warnings=0",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "prettier --write \"{src,test}/**/*.ts\" \"{bin,scripts}/**/*.{js,mjs}\"",
+    "format:check": "prettier --check \"{src,test}/**/*.ts\" \"{bin,scripts}/**/*.{js,mjs}\"",
+    "test": "tsx --test test/*.test.ts",
+    "test:unit": "tsx --test test/activity-rules.test.ts test/activity.test.ts test/config.test.ts test/controller.test.ts test/files.test.ts test/frame.test.ts test/git.test.ts test/input.test.ts test/output.test.ts test/processes.test.ts test/selection.test.ts test/sessions.test.ts test/thread-name.test.ts test/ui-input.test.ts",
+    "check": "npm run lint && npm run typecheck",
+    "postinstall": "node scripts/patch-unicode.mjs",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@rezi-ui/core": "0.1.0-beta.2",
+    "@rezi-ui/node": "0.1.0-beta.2",
+    "@xterm/addon-unicode-graphemes": "0.4.0",
+    "@xterm/headless": "6.0.0",
+    "node-pty": "1.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "@types/node": "22.20.1",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import-x": "^4.17.1",
+    "eslint-plugin-prettier": "^5.5.6",
+    "eslint-plugin-sonarjs": "^4.2.0",
+    "eslint-plugin-unicorn": "^73.0.0",
+    "globals": "^17.9.0",
+    "prettier": "^3.9.6",
+    "tsx": "4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.66.0"
+  }
+}

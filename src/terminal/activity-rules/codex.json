@@ -1,0 +1,14 @@
+{
+  "id": "codex",
+  "version": 1,
+  "agents": ["Codex"],
+  "prompts": ["›"],
+  "patterns": {
+    "transcript": ["↑/↓ to scroll.*q to quit", "showing detailed transcript"],
+    "update": ["update available"],
+    "updateContinue": ["enter(?: to)? continue"],
+    "filePicker": ["all results"],
+    "filePickerScopes": ["filesystem only"],
+    "filePickerPlugins": ["plugins"]
+  }
+}

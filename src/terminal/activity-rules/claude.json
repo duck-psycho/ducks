@@ -1,0 +1,22 @@
+{
+  "id": "claude",
+  "version": 1,
+  "agents": ["Claude Code"],
+  "prompts": ["❯"],
+  "patterns": {
+    "backgroundCount": [
+      "\\b[1-9][0-9]* background agents?\\b",
+      "\\b[1-9][0-9]* MCP tasks?\\b"
+    ],
+    "backgroundState": ["to finish", "still running"],
+    "sideQuestion": ["^/btw(?:\\s|$)"],
+    "closeOverlay": ["esc to close"],
+    "workflow": ["run a dynamic workflow?"],
+    "elicitation": ["^MCP server .+ requests your input$"],
+    "idleProgress": ["^4;0(?:;|$)"],
+    "request": [
+      "do you want to allow this connection\\?",
+      "waiting for permission"
+    ]
+  }
+}

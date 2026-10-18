@@ -1,0 +1,53 @@
+{
+  "id": "generic",
+  "version": 1,
+  "agents": [],
+  "prompts": ["›", "❯"],
+  "patterns": {
+    "titleBusy": ["(?:^|\\s)[⠁-⣿◐-◓](?:\\s|$)"],
+    "titleWaiting": ["action required"],
+    "titleIdle": ["^(?:codex|claude|✳)(?:\\s|$)"],
+    "transcript": ["showing detailed transcript", "↑/↓ to scroll.*q to quit"],
+    "modelPicker": ["select model"],
+    "modelChoice": ["enter to set as default"],
+    "cancel": ["esc to cancel"],
+    "confirm": [
+      "enter to (?:confirm|submit)",
+      "press enter to continue",
+      "enter to select"
+    ],
+    "question": [
+      "would you like",
+      "do you (?:want|trust)",
+      "trust this folder",
+      "разрешить|подтвердить"
+    ],
+    "options": [
+      "\\[(?:y/n|yes/no)\\]",
+      "yes \\(y\\)",
+      "^[›❯]?\\s*(?:[0-9]+[.)]\\s*)?(?:yes|no|accept|decline)\\b",
+      "enter to select|esc to cancel|trust and continue|enter continue"
+    ],
+    "request": [
+      "allow (?:this )?command\\?",
+      "waiting for (?:your )?(?:input|approval|permission)",
+      "permission required",
+      "жд[её]т (?:ввода|подтверждения)|требуется (?:ввод|подтверждение)"
+    ],
+    "workVerb": [
+      "\\b(?:working|thinking|processing|generating|running|analyzing)\\b"
+    ],
+    "workSymbol": ["^[*·✢✳✶✻✽] "],
+    "timer": ["\\([0-9]+[hms](?: [0-9]+[hms])*(?: • [^)]*)?\\)"],
+    "interrupt": ["(?:esc|ctrl\\+c|alt\\+x) to interrupt"],
+    "ellipsis": ["…", "\\.\\.\\."],
+    "failedWork": ["^Reconnect failed\\b"],
+    "response": ["^[•✓✗■] "],
+    "auxiliary": ["^[0-9]+ tasks? \\(", "^[◻◼✔] ", "^… \\+[0-9]+ pending$"],
+    "selectedOption": [
+      "^[›❯]\\s*(?:[0-9]+[.)]\\s*)?(?:yes|no|accept|decline)\\b",
+      "^[›❯]\\s*[0-9]+[.)]\\s"
+    ],
+    "continuation": ["^• (?:Queued follow-up inputs|Messages to be submitted)"]
+  }
+}
