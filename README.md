@@ -2,6 +2,12 @@
 
 A terminal multiplexer for CLI agents. Organize working directories into Places, run agents in separate tabs, and see their activity status in one interface.
 
+<p align="center">
+  <img src="docs/screenshots/overview.png" alt="Ducks with three Places, Git branches, multiple agent tabs, and activity indicators" width="800">
+</p>
+
+*The screenshots show the real Ducks interface with prepared demo sessions and agent output.*
+
 ## Requirements
 
 - Linux or macOS, Node.js ≥22.13, and npm.
@@ -30,3 +36,29 @@ npm run dev -- --place /path/to/project
 ```
 
 After changing source files, run `npm run build` before using `npm start` again.
+
+## Features in action
+
+### Multiline prompts
+
+Press `Ctrl+B`, then `p` to compose a prompt for the selected agent. Use `Ctrl+Enter` or `Alt+Enter` to send it, or `Esc` to keep the draft for later.
+
+<p align="center">
+  <img src="docs/screenshots/prompt.png" alt="Multiline prompt editor with a task, checklist, and the selected target agent" width="800">
+</p>
+
+### Find Places and agents
+
+Press `Ctrl+B`, then `f` to search across Places and agent thread names. Select a result and press `Enter` to focus its terminal.
+
+<p align="center">
+  <img src="docs/screenshots/search.png" alt="Search results for a Place and an agent in another project" width="800">
+</p>
+
+### Dark and light themes
+
+Press `Ctrl+B`, then `m` to preview six built-in themes. Use the arrow keys to switch, `Enter` to save, or `Esc` to restore the previous theme.
+
+<p align="center">
+  <img src="docs/screenshots/themes.png" alt="Settings previewing the Catppuccin Latte light theme" width="800">
+</p>
