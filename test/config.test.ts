@@ -123,6 +123,29 @@ void test('config rejects duplicate session ids and unknown profiles; stale sele
   assert.throws(() => parseConfig(config), /Unknown profile/);
 });
 
+void test('sidebar width defaults for legacy configs, validates and survives reload', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'ducks-sidebar-'));
+
+  try {
+    const { sidebarWidth, ...legacy } = defaultConfig();
+
+    assert.equal(parseConfig(legacy).sidebarWidth, sidebarWidth);
+    for (const invalid of [null, '50', 0, -1, 19, 40.5, NaN, Infinity]) {
+      assert.throws(
+        () => parseConfig({ ...legacy, sidebarWidth: invalid }),
+        /Invalid sidebarWidth/u,
+      );
+    }
+
+    const store = new ConfigStore(join(directory, 'config.json'));
+    await store.save(parseConfig({ ...legacy, sidebarWidth: 65 }));
+
+    assert.equal((await store.load()).sidebarWidth, 65);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 void test('project paths resolve symlinks and reject files or missing directories', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'ducks-path-'));
 

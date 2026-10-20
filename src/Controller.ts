@@ -76,6 +76,8 @@ export class Controller {
   public modalHits: { rect: Rect; index: number }[] = [];
   private _prefixTimer: ReturnType<typeof setTimeout> | null = null;
   private _fileClick = false;
+  private _sidebarDrag: number | null = null;
+  private _pointerEvent: Extract<InputEvent, { kind: 'mouse' }> | null = null;
   private readonly _editorSources = new Map<string, string>();
   private _fileHover: FileHover | null = null;
   private readonly _promptDrafts = new Map<string, PromptEditor>();
@@ -126,10 +128,20 @@ export class Controller {
     });
 
     this._syncTreeIndex();
-    this.sessions.resize(
-      layout(this.cols, this.rows).terminal.w,
-      layout(this.cols, this.rows).terminal.h,
-    );
+    this.sessions.resize(this.geometry.terminal.w, this.geometry.terminal.h);
+  }
+  public get geometry(): ReturnType<typeof layout> {
+    return layout(this.cols, this.rows, this.config.sidebarWidth);
+  }
+  public get pointerShape(): '' | 'ew-resize' {
+    if (this.closing || this.modal || this.geometry.small) {
+      return '';
+    }
+
+    const event = this._pointerEvent;
+    const hovering = event && !event.buttons && this._onDivider(event);
+
+    return this._sidebarDrag !== null || hovering ? 'ew-resize' : '';
   }
   public get place(): Place | undefined {
     return this.config.places.find((p) => p.id === this.config.activePlaceId);
@@ -360,6 +372,23 @@ export class Controller {
   }
 
   public handle(event: InputEvent): void {
+    const pointerShape = this.pointerShape;
+    if (event.kind === 'mouse') {
+      this._pointerEvent = event;
+    } else if (
+      event.kind === 'resize' ||
+      (event.kind === 'key' && event.key === 'focusout')
+    ) {
+      this._pointerEvent = null;
+    }
+
+    this._handle(event);
+    if (this.pointerShape !== pointerShape) {
+      this._changed();
+    }
+  }
+
+  private _handle(event: InputEvent): void {
     if (this.closing) {
       return;
     }
@@ -374,6 +403,9 @@ export class Controller {
 
     if (event.kind !== 'mouse' || this.modal) {
       this._clearFileHover();
+      this._finishSidebarDrag();
+    } else if (this._resizeSidebar(event)) {
+      return;
     }
 
     if (this._selectionInput(event)) {
@@ -401,6 +433,71 @@ export class Controller {
     if (highlighted) {
       this._changed();
     }
+  }
+
+  private _finishSidebarDrag(): void {
+    const original = this._sidebarDrag;
+    this._sidebarDrag = null;
+    if (original !== null && original !== this.config.sidebarWidth) {
+      this._persist();
+    }
+  }
+
+  private _startSidebarDrag(
+    event: Extract<InputEvent, { kind: 'mouse' }>,
+  ): boolean {
+    const geometry = this.geometry;
+    if (
+      geometry.small ||
+      this._fileClick ||
+      event.action !== 3 ||
+      event.buttons !== 1 ||
+      !this._onDivider(event)
+    ) {
+      return false;
+    }
+
+    this._sidebarDrag = this.config.sidebarWidth;
+    this._clearFileHover();
+    this._clearSelection();
+
+    return true;
+  }
+
+  private _onDivider(event: Extract<InputEvent, { kind: 'mouse' }>): boolean {
+    const divider = {
+      x: this.geometry.sidebar.w,
+      y: 0,
+      w: 1,
+      h: this.rows - 1,
+    };
+
+    return inside(divider, event.x, event.y);
+  }
+
+  private _resizeSidebar(
+    event: Extract<InputEvent, { kind: 'mouse' }>,
+  ): boolean {
+    if (this._sidebarDrag === null) {
+      return this._startSidebarDrag(event);
+    }
+
+    const geometry = this.geometry;
+    if ([2, 4].includes(event.action) && event.x !== geometry.sidebar.w) {
+      const resized = layout(this.cols, this.rows, event.x);
+      if (resized.sidebar.w !== geometry.sidebar.w) {
+        this.config.sidebarWidth = resized.sidebar.w;
+        this.sessions.resize(resized.terminal.w, resized.terminal.h);
+        this.tabHits = [];
+        this._changed();
+      }
+    }
+
+    if (event.action === 4 || (event.action === 1 && !event.buttons)) {
+      this._finishSidebarDrag();
+    }
+
+    return true;
   }
 
   private _clearSelection(): void {
@@ -439,7 +536,7 @@ export class Controller {
   }
 
   private _hoverFile(event: Extract<InputEvent, { kind: 'mouse' }>): void {
-    const area = layout(this.cols, this.rows).terminal;
+    const area = this.geometry.terminal;
     const session = this.session,
       place = this.place;
     if (!this._canHoverFile(event, area) || !session || !place) {
@@ -522,7 +619,7 @@ export class Controller {
     this._ensureVisible();
   }
   private _ensureVisible(): void {
-    const h = layout(this.cols, this.rows).sidebar.h;
+    const h = this.geometry.sidebar.h;
     this.treeIndex = Math.max(
       0,
       Math.min(this.treeIndex, this.tree().length - 1),
@@ -1037,7 +1134,7 @@ export class Controller {
       return;
     }
 
-    const geometry = layout(this.cols, this.rows);
+    const geometry = this.geometry;
     if (inside(geometry.sidebar, event.x, event.y)) {
       this._sidebarMouse(event, geometry);
 
@@ -1176,7 +1273,7 @@ export class Controller {
       );
     }
 
-    const geometry = layout(this.cols, this.rows);
+    const geometry = this.geometry;
     if (!geometry.small) {
       this.sessions.resize(geometry.terminal.w, geometry.terminal.h);
     }
@@ -1240,7 +1337,7 @@ export class Controller {
     if (event.kind === 'key' && historyKey(event)) {
       session.screen.scroll(
         (event.key === 'pageup' ? 1 : -1) *
-          Math.max(1, layout(this.cols, this.rows).terminal.h - 1),
+          Math.max(1, this.geometry.terminal.h - 1),
       );
       this._changed();
 
@@ -1282,7 +1379,7 @@ export class Controller {
       return;
     }
 
-    if (layout(this.cols, this.rows).small) {
+    if (this.geometry.small) {
       return;
     }
 
@@ -1430,7 +1527,7 @@ export class Controller {
       return false;
     }
 
-    const area = layout(this.cols, this.rows).terminal;
+    const area = this.geometry.terminal;
     selection.move(event.x - area.x, event.y - area.y);
     if (event.action === 4) {
       selection.dragging = false;

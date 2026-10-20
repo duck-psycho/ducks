@@ -18,8 +18,12 @@ import { renderFrame } from '../src/ui/view.js';
 import { FakePty } from './FakePty.js';
 import { FakeScreen } from './FakeScreen.js';
 
-function setup(copyText?: (text: string) => void) {
+function setup(
+  copyText?: (text: string) => void,
+  sidebarWidth = SIDEBAR_WIDTH,
+) {
   const config = defaultConfig();
+  config.sidebarWidth = sidebarWidth;
   config.places = [
     {
       id: 'p',
@@ -114,6 +118,181 @@ function setup(copyText?: (text: string) => void) {
     },
   };
 }
+
+function sidebarMouse(controller: Controller) {
+  return (action: number, x: number, y = 5, buttons = action === 4 ? 0 : 1) => {
+    controller.handle({
+      kind: 'mouse',
+      action,
+      x,
+      y,
+      buttons,
+      wheelY: 0,
+      mods: NO_MODS,
+    });
+  };
+}
+
+void test('divider drag resizes every terminal, saves once on release and isolates the gesture', async () => {
+  const context = setup();
+  const { controller, config, manager, children } = context;
+  const mouse = sidebarMouse(controller);
+  const saved = context.saved;
+  const focus = controller.focus;
+  (defined(controller.session).screen as FakeScreen).modes.mouseTrackingMode =
+    'any';
+
+  try {
+    mouse(3, SIDEBAR_WIDTH);
+    mouse(2, 50);
+    mouse(2, 55);
+
+    assert.equal(config.sidebarWidth, 55);
+    assert.equal(context.saved, saved);
+    for (const session of manager.sessions.values()) {
+      assert.equal((session.screen as FakeScreen).cols, 43);
+    }
+
+    assert.equal(renderFrame(controller).cells[5]?.[55]?.text, '│');
+    assert.ok(controller.tabHits.every((hit) => hit.rect.x >= 56));
+
+    // Release outside the sidebar, including a final movement.
+    mouse(4, 60, controller.rows - 1);
+
+    assert.equal(config.sidebarWidth, 60);
+    assert.equal(context.saved, saved + 1);
+    assert.equal(controller.focus, focus);
+    assert.equal(controller.terminalSelection, null);
+    assert.ok(children.every((child) => child.writes.length === 0));
+
+    renderFrame(controller);
+    const hit = defined(controller.tabHits[1]);
+    mouse(3, hit.rect.x + 1, hit.rect.y);
+
+    assert.equal(controller.agent?.id, 'b', 'tabs use the updated geometry');
+  } finally {
+    await manager.shutdown();
+  }
+});
+
+void test('resize pointer follows divider hover and drag and resets for dialogs, resize and exit', async () => {
+  const { controller, manager, command, key } = setup();
+  const mouse = sidebarMouse(controller);
+  const hover = (x: number, y = 5) => {
+    mouse(1, x, y, 0);
+  };
+
+  try {
+    assert.equal(controller.pointerShape, '');
+    hover(SIDEBAR_WIDTH);
+
+    assert.equal(controller.pointerShape, 'ew-resize');
+    hover(SIDEBAR_WIDTH + 1);
+
+    assert.equal(controller.pointerShape, '');
+    hover(SIDEBAR_WIDTH, controller.rows - 1);
+
+    assert.equal(controller.pointerShape, '', 'footer is not a resize handle');
+    hover(SIDEBAR_WIDTH);
+    command('m');
+
+    assert.equal(controller.pointerShape, '', 'modal covers the divider');
+    key('escape');
+
+    assert.equal(controller.pointerShape, 'ew-resize');
+    mouse(3, SIDEBAR_WIDTH);
+    mouse(2, 500, controller.rows - 1);
+
+    assert.equal(controller.pointerShape, 'ew-resize', 'drag stays captured');
+    mouse(4, 500, controller.rows - 1);
+
+    assert.equal(controller.pointerShape, '');
+    hover(controller.geometry.sidebar.w);
+    controller.handle({ kind: 'resize', cols: 120, rows: 30 });
+
+    assert.equal(controller.pointerShape, '');
+    hover(controller.geometry.sidebar.w);
+    key('focusout');
+
+    assert.equal(controller.pointerShape, '');
+    hover(controller.geometry.sidebar.w);
+    await controller.quit();
+
+    assert.equal(controller.pointerShape, '');
+  } finally {
+    await manager.shutdown();
+  }
+});
+
+void test('sidebar width is restored, constrained during dragging and preserved across window resizes', async () => {
+  const context = setup(undefined, 60);
+  const { controller, config, manager } = context;
+  const mouse = sidebarMouse(controller);
+
+  try {
+    assert.equal(controller.geometry.sidebar.w, 60);
+    assert.equal((defined(controller.session).screen as FakeScreen).cols, 38);
+    controller.handle({ kind: 'resize', cols: 80, rows: 24 });
+
+    assert.equal(controller.geometry.sidebar.w, 58);
+    assert.equal(config.sidebarWidth, 60);
+
+    const saved = context.saved;
+    mouse(3, 58);
+    mouse(4, 58);
+
+    assert.equal(context.saved, saved, 'a click does not overwrite preference');
+    controller.handle({ kind: 'resize', cols: 120, rows: 30 });
+
+    assert.equal(controller.geometry.sidebar.w, 60);
+    mouse(3, 60);
+    mouse(2, -10);
+
+    assert.equal(controller.geometry.sidebar.w, 20);
+    mouse(2, 200);
+    mouse(4, 200);
+
+    assert.equal(config.sidebarWidth, 98);
+    assert.equal(controller.geometry.terminal.w, 20);
+    assert.equal(context.saved, saved + 1);
+  } finally {
+    await manager.shutdown();
+  }
+});
+
+void test('sidebar dragging ignores other buttons and modals and ends on a window resize', async () => {
+  const context = setup();
+  const { controller, config, manager, command, key } = context;
+  const mouse = sidebarMouse(controller);
+
+  try {
+    mouse(3, SIDEBAR_WIDTH, 5, 2);
+    mouse(2, 50, 5, 2);
+    mouse(4, 50);
+
+    assert.equal(config.sidebarWidth, SIDEBAR_WIDTH);
+    command('m');
+    mouse(3, SIDEBAR_WIDTH, 0);
+    mouse(2, 50, 0);
+    mouse(4, 50, 0);
+
+    assert.equal(config.sidebarWidth, SIDEBAR_WIDTH);
+    key('escape');
+    const saved = context.saved;
+    mouse(3, SIDEBAR_WIDTH);
+    mouse(2, 50);
+    controller.handle({ kind: 'resize', cols: 60, rows: 20 });
+
+    assert.equal(context.saved, saved + 1);
+    mouse(4, 10);
+    controller.handle({ kind: 'resize', cols: 120, rows: 30 });
+    mouse(2, 70);
+
+    assert.equal(config.sidebarWidth, 50, 'interrupted drag does not resume');
+  } finally {
+    await manager.shutdown();
+  }
+});
 
 void test('Ctrl hover highlights only resolvable text files, restores styling and rejects stale async checks', async () => {
   const { controller, manager, children } = setup();

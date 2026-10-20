@@ -1,11 +1,12 @@
 import { defined } from '../defined.js';
 import { SHORTCUTS, shortcutVisibleRows } from '../shortcuts.js';
 import { Frame } from './Frame.js';
-import { promptWidth, searchVisibleRows, layout } from './layout.js';
+import { promptWidth, searchVisibleRows } from './layout.js';
 import { graphemes, textWidth } from './text.js';
 import type { Controller } from '../Controller.js';
 import type { Modal, TreeRow } from './state.js';
 import type { AgentDefinition, AgentActivity, Place } from '../model.js';
+import type { layout } from './layout.js';
 import type { CellStyle } from '../terminal/contracts.js';
 
 export const WORKING_FRAME_MS = 100;
@@ -54,7 +55,7 @@ export function renderFrame(
 
   c.tabHits = [];
   c.modalHits = [];
-  if (layout(c.cols, c.rows).small) {
+  if (c.geometry.small) {
     frame.text(2, 2, 'Increase terminal to at least 80 × 24', {
       ...baseStyle,
       fg: colors.yellow,
@@ -65,7 +66,7 @@ export function renderFrame(
     return frame;
   }
 
-  const geometry = layout(c.cols, c.rows);
+  const geometry = c.geometry;
   const context: FrameContext = {
     c,
     frame,
@@ -752,7 +753,9 @@ function renderPlaceRow(
   const { c, frame, geometry, colors } = context;
   const sidebarWidth = geometry.sidebar.w;
   const branch = c.git.get(place);
-  const branchWidth = branch ? Math.min(20, textWidth(branch)) : 0;
+  const branchWidth = branch
+    ? Math.min(20, textWidth(branch), sidebarWidth - 12)
+    : 0;
   const nameWidth = sidebarWidth - 4 - (branch ? branchWidth + 1 : 0);
 
   const style = {

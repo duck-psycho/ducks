@@ -1,6 +1,7 @@
 import { realpath, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { isAbsolute, join, resolve } from 'node:path';
+import { DEFAULT_SIDEBAR_WIDTH, MIN_SIDEBAR_WIDTH } from './model.js';
 import { DEFAULT_THEME, isThemeId } from './themes.js';
 import type { AgentDefinition, Config, Place, Profile } from './model.js';
 const PROFILE_ID = 'profile id';
@@ -53,6 +54,18 @@ export function parseConfig(value: unknown): Config {
   const theme = root['theme'] === undefined ? DEFAULT_THEME.id : root['theme'];
   if (!isThemeId(theme)) {
     throw new Error(`Unknown theme: ${JSON.stringify(theme)}`);
+  }
+
+  const sidebarWidth =
+    root['sidebarWidth'] === undefined
+      ? DEFAULT_SIDEBAR_WIDTH
+      : root['sidebarWidth'];
+  if (
+    typeof sidebarWidth !== 'number' ||
+    !Number.isSafeInteger(sidebarWidth) ||
+    sidebarWidth < MIN_SIDEBAR_WIDTH
+  ) {
+    throw new Error('Invalid sidebarWidth');
   }
 
   const profiles: Profile[] = list(root['profiles']).map((value) => {
@@ -136,6 +149,7 @@ export function parseConfig(value: unknown): Config {
   return {
     version: 1,
     theme,
+    sidebarWidth,
     profiles,
     places,
     activePlaceId: places.some((p) => p.id === activePlaceId)

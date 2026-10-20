@@ -1,4 +1,7 @@
-export const SIDEBAR_WIDTH = 40;
+import { DEFAULT_SIDEBAR_WIDTH, MIN_SIDEBAR_WIDTH } from '../model.js';
+
+export const SIDEBAR_WIDTH: number = DEFAULT_SIDEBAR_WIDTH;
+const MIN_TERMINAL_WIDTH = 20;
 
 export type Rect = {
   x: number;
@@ -16,12 +19,17 @@ export function inside(rect: Rect, x: number, y: number): boolean {
 export function layout(
   cols: number,
   rows: number,
+  preferredSidebarWidth: number = SIDEBAR_WIDTH,
 ): { sidebar: Rect; terminal: Rect; tabs: Rect; small: boolean } {
-  const terminalX = SIDEBAR_WIDTH + 1;
+  const sidebarWidth = Math.max(
+    MIN_SIDEBAR_WIDTH,
+    Math.min(preferredSidebarWidth, cols - MIN_TERMINAL_WIDTH - 2),
+  );
+  const terminalX = sidebarWidth + 1;
 
   return {
     small: cols < 80 || rows < 24,
-    sidebar: { x: 0, y: 1, w: SIDEBAR_WIDTH, h: Math.max(0, rows - 3) },
+    sidebar: { x: 0, y: 1, w: sidebarWidth, h: Math.max(0, rows - 3) },
     tabs: { x: terminalX, y: 0, w: Math.max(0, cols - terminalX), h: 1 },
     terminal: {
       x: terminalX,

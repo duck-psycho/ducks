@@ -40,6 +40,18 @@ function startTui(
   terminal.loadAddon(new UnicodeGraphemesAddon());
 
   const clipboard: string[] = [];
+  const pointerShapes: string[] = [];
+  let pointerShape = 'default';
+
+  terminal.parser.registerOscHandler(22, (data) => {
+    pointerShapes.push(data);
+    // Ghostty 1.3.1 accepts named shapes but ignores an empty reset.
+    if (data === 'default' || data === 'ew-resize') {
+      pointerShape = data;
+    }
+
+    return true;
+  });
 
   terminal.parser.registerOscHandler(52, (data) => {
     const encoded = data.slice(data.indexOf(';') + 1);
@@ -154,6 +166,8 @@ function startTui(
     underline,
     mouseTracking: () => terminal.modes.mouseTrackingMode,
     clipboard,
+    pointerShapes,
+    pointerShape: () => pointerShape,
     until,
     resize,
     exitCode: () => exitCode,
@@ -170,6 +184,77 @@ function startTui(
     },
   };
 }
+
+void test(
+  'native divider drag resizes the PTY and restores the saved width after restart',
+  { timeout: 20000 },
+  async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'ducks-sidebar-'));
+    const configPath = join(directory, 'config.json');
+    let app = startTui(configPath, ['--place', directory]);
+    const dividerAt = (x: number) => app.screen().split('\n')[0]?.[x] === '│';
+    const shellReady = () =>
+      app
+        .screen()
+        .split('\n')
+        .some((line) => /[$#]\s*$/u.test(line));
+
+    try {
+      await app.until(shellReady, 'startup shell');
+      assert.ok(dividerAt(SIDEBAR_WIDTH));
+      app.child.write(`\x1b[<35;${SIDEBAR_WIDTH + 1};6M`);
+      await app.until(
+        () => app.pointerShapes.at(-1) === 'ew-resize',
+        'divider hover sets the host resize pointer',
+      );
+      app.child.write('\x1b[<35;2;6M');
+      await app.until(
+        () => app.pointerShape() === 'default',
+        'leaving the divider resets the host pointer',
+      );
+      app.child.write(`\x1b[<35;${SIDEBAR_WIDTH + 1};6M`);
+      await app.until(
+        () => app.pointerShape() === 'ew-resize',
+        'returning to the divider restores the resize pointer',
+      );
+      app.child.write(`\x1b[<35;${SIDEBAR_WIDTH + 5};6M`);
+      await app.until(
+        () => app.pointerShape() === 'default',
+        'moving into the terminal resets the pointer even without empty OSC 22 support',
+      );
+      app.child.write(`\x1b[<0;${SIDEBAR_WIDTH + 1};6M`);
+      app.child.write('\x1b[<32;53;6M');
+      await app.until(() => dividerAt(52), 'divider follows mouse drag');
+      assert.equal(app.pointerShapes.at(-1), 'ew-resize');
+      app.child.write('\x1b[<0;53;6m');
+      await app.until(
+        async () =>
+          (JSON.parse(await readFile(configPath, 'utf8')) as Config)
+            .sidebarWidth === 52,
+        'sidebar width saved on release',
+      );
+      app.child.write("printf 'RESIZED_'; stty size\r");
+      await app.until(
+        () => app.screen().includes('RESIZED_32 66'),
+        'child PTY receives new dimensions',
+      );
+      app.child.write('\x02q');
+      await app.until(() => app.exitCode() === 0, 'clean exit');
+      assert.equal(app.pointerShapes.at(-1), '', 'exit resets the pointer');
+      assert.equal(app.pointerShape(), 'default');
+      app.dispose();
+
+      app = startTui(configPath);
+      await app.until(shellReady, 'restored shell');
+      assert.ok(dividerAt(52), 'saved width restored at startup');
+      app.child.write('\x02q');
+      await app.until(() => app.exitCode() === 0, 'clean exit after restart');
+    } finally {
+      app.dispose();
+      await rm(directory, { recursive: true, force: true });
+    }
+  },
+);
 
 void test(
   'native search opens a Place and finds a background agent by its sidebar thread name',

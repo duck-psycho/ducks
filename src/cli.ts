@@ -98,12 +98,20 @@ async function main(): Promise<void> {
   let disposed = false;
   let renderReady = false;
   let repaint = false;
+  let pointerShape = '';
   let resizeTimer: ReturnType<typeof setTimeout> | undefined;
 
   // Rezi rejects updates while its backend is starting or stopping. The first
   // frame reads the controller directly, including any changes made at startup.
   const changed = () => {
     if (renderReady && !disposed) {
+      if (pointerShape !== controller.pointerShape) {
+        pointerShape = controller.pointerShape;
+        // OSC 22 changes the host mouse pointer independently of the text cursor.
+        // Ghostty 1.3.1 ignores an empty shape, so restore the arrow explicitly.
+        process.stdout.write(`\x1b]22;${pointerShape || 'default'}\x1b\\`);
+      }
+
       app.update((state: Readonly<{ revision: number }>) => ({
         revision: state.revision + 1,
       }));
@@ -256,7 +264,7 @@ async function main(): Promise<void> {
     } finally {
       process.stdin.setRawMode(false);
       process.stdout.write(
-        '\x1b[0m\x1b[?25h\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?2004l\x1b[?1049l',
+        '\x1b]22;default\x1b\\\x1b]22;\x1b\\\x1b[0m\x1b[?25h\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l\x1b[?2004l\x1b[?1049l',
       );
     }
   }
