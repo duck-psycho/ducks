@@ -69,7 +69,8 @@ export class GitBranches {
             if (
               current.status?.branch !== status?.branch ||
               current.status?.dirty !== status?.dirty ||
-              current.status?.ahead !== status?.ahead
+              current.status?.ahead !== status?.ahead ||
+              current.status?.behind !== status?.behind
             ) {
               current.status = status;
               this._changed();

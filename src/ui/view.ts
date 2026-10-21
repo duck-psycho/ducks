@@ -1,4 +1,3 @@
-import { getIconChar } from '@rezi-ui/core';
 import { defined } from '../defined.js';
 import { SHORTCUTS, shortcutVisibleRows } from '../shortcuts.js';
 import { Frame } from './Frame.js';
@@ -686,6 +685,13 @@ function renderTab(
   });
 }
 
+function formatCommitCount(
+  count: number | undefined,
+  arrow: '↑' | '↓',
+): string {
+  return count === 0 ? '' : ` ${arrow}${count ?? '?'}`;
+}
+
 function renderPlaceRow(
   context: FrameContext,
   place: Place,
@@ -697,9 +703,9 @@ function renderPlaceRow(
   const sidebarWidth = geometry.sidebar.w;
   const git = c.git.getStatus(place);
   const branch = git?.branch;
-  const dirty = git?.dirty ? ` ${getIconChar('git.modified')}` : '';
-  const ahead = git && git.ahead !== 0 ? ` ↑${git.ahead ?? '?'}` : '';
-  const indicatorsWidth = textWidth(dirty + ahead);
+  const ahead = git ? formatCommitCount(git.ahead, '↑') : '';
+  const behind = formatCommitCount(git?.behind ?? 0, '↓');
+  const indicatorsWidth = textWidth(ahead + behind);
   const branchWidth = branch
     ? Math.min(
         20,
@@ -723,12 +729,11 @@ function renderPlaceRow(
       3 + nameWidth + 1,
       y,
       branch,
-      { fg: colors.muted, bg },
+      { fg: git.dirty ? colors.yellow : colors.muted, bg },
       branchWidth,
     );
     const indicatorX = 3 + nameWidth + 1 + branchWidth;
-    frame.text(indicatorX, y, dirty, { fg: colors.yellow, bg });
-    frame.text(indicatorX + textWidth(dirty), y, ahead, {
+    frame.text(indicatorX, y, ahead + behind, {
       fg: colors.accent,
       bg,
     });

@@ -1197,7 +1197,7 @@ for (const startup of ['saved', '--place'] as const) {
             screen()
               .split('\n')
               .some((line) =>
-                /\bmain(?: ●)? ↑\?\s*$/u.test(line.slice(0, SIDEBAR_WIDTH)),
+                /\bmain ↑\?\s*$/u.test(line.slice(0, SIDEBAR_WIDTH)),
               ),
           'branch after startup',
         );

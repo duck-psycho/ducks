@@ -91,7 +91,7 @@ void test('branch refresh observes branch changes and removes Git labels after c
     (directory) =>
       Promise.resolve(
         directory === '/repo' && branch
-          ? { branch, dirty: false, ahead: 0 }
+          ? { branch, dirty: false, ahead: 0, behind: 0 }
           : undefined,
       ),
   );
@@ -131,7 +131,7 @@ void test('branch refresh observes branch changes and removes Git labels after c
   monitor.dispose();
 });
 
-void test('Git status tracks untracked, staged and unstaged files and commits ahead of upstream', async () => {
+void test('Git status tracks untracked, staged and unstaged files and commits ahead of and behind upstream', async () => {
   const root = await mkdtemp(join(tmpdir(), 'ducks-git-status-'));
   const repo = join(root, 'repo');
   const remote = join(root, 'remote.git');
@@ -145,6 +145,7 @@ void test('Git status tracks untracked, staged and unstaged files and commits ah
       branch: 'main',
       dirty: false,
       ahead: undefined,
+      behind: undefined,
     });
     await writeFile(join(repo, 'file\n# branch.ab +999 -0'), 'initial');
     assert.equal((await readGitStatus(nested))?.dirty, true);
@@ -158,12 +159,14 @@ void test('Git status tracks untracked, staged and unstaged files and commits ah
       branch: 'main',
       dirty: false,
       ahead: 0,
+      behind: 0,
     });
     await writeFile(join(repo, 'file\n# branch.ab +999 -0'), 'modified');
     assert.deepEqual(await readGitStatus(nested), {
       branch: 'main',
       dirty: true,
       ahead: 0,
+      behind: 0,
     });
     await runGit(repo, 'commit', '-am', 'change');
     await runGit(repo, 'commit', '--allow-empty', '-m', 'another');
@@ -171,6 +174,7 @@ void test('Git status tracks untracked, staged and unstaged files and commits ah
       branch: 'main',
       dirty: false,
       ahead: 2,
+      behind: 0,
     });
     await runGit(repo, 'push');
     assert.equal((await readGitStatus(repo))?.ahead, 0);
@@ -181,19 +185,46 @@ void test('Git status tracks untracked, staged and unstaged files and commits ah
       branch: 'main',
       dirty: true,
       ahead: 0,
+      behind: 0,
     });
     await rm(join(repo, 'new-file'));
     await mkdir(join(repo, '.git', 'info'));
     await writeFile(join(repo, '.git', 'info', 'exclude'), 'ignored\n');
     await writeFile(join(repo, 'ignored'), 'ignored');
     assert.equal((await readGitStatus(repo))?.dirty, false);
+
+    const peer = join(root, 'peer');
+    await runGit(root, 'clone', '--branch', 'main', remote, peer);
+    await runGit(peer, 'commit', '--allow-empty', '-m', 'remote change');
+    await runGit(
+      peer,
+      'commit',
+      '--allow-empty',
+      '-m',
+      'another remote change',
+    );
+    await runGit(peer, 'push');
+    await runGit(repo, 'fetch', 'origin');
+    assert.deepEqual(await readGitStatus(nested), {
+      branch: 'main',
+      dirty: false,
+      ahead: 0,
+      behind: 2,
+    });
+    await runGit(repo, 'commit', '--allow-empty', '-m', 'local change');
+    assert.deepEqual(await readGitStatus(repo), {
+      branch: 'main',
+      dirty: false,
+      ahead: 1,
+      behind: 2,
+    });
   } finally {
     await rm(root, { recursive: true, force: true });
   }
 });
 
-void test('status refresh repaints dirty and ahead changes on the same branch', async () => {
-  let status: GitStatus = { branch: 'main', dirty: false, ahead: 0 };
+void test('status refresh repaints dirty, ahead and behind changes on the same branch', async () => {
+  let status: GitStatus = { branch: 'main', dirty: false, ahead: 0, behind: 0 };
   let changes = 0;
   const monitor = new GitBranches(
     () => {
@@ -222,6 +253,16 @@ void test('status refresh repaints dirty and ahead changes on the same branch', 
   status = { ...status, ahead: 0 };
   await monitor.refresh([place]);
   assert.equal(changes, 4);
+  status = { ...status, behind: 3 };
+  await monitor.refresh([place]);
+  assert.equal(changes, 5);
+  assert.equal(monitor.getStatus(place)?.behind, 3);
+  await monitor.refresh([place]);
+  assert.equal(changes, 5);
+  status = { ...status, behind: 0 };
+  await monitor.refresh([place]);
+  assert.equal(changes, 6);
+  assert.equal(monitor.getStatus(place)?.behind, 0);
   monitor.dispose();
 });
 
@@ -257,12 +298,14 @@ void test('slow Git reads cannot overwrite a new directory, removed Place or dis
     branch: 'new-branch',
     dirty: false,
     ahead: 0,
+    behind: 0,
   });
   await next;
   defined(replies.get('/old'))({
     branch: 'old-branch',
     dirty: false,
     ahead: 0,
+    behind: 0,
   });
   await old;
 
@@ -277,6 +320,7 @@ void test('slow Git reads cannot overwrite a new directory, removed Place or dis
     branch: 'removed-branch',
     dirty: false,
     ahead: 0,
+    behind: 0,
   });
   await removed;
 
@@ -295,6 +339,7 @@ void test('slow Git reads cannot overwrite a new directory, removed Place or dis
     branch: 'late-branch',
     dirty: false,
     ahead: 0,
+    behind: 0,
   });
   await disposed;
 

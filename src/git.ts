@@ -4,6 +4,7 @@ export type GitStatus = {
   branch: string;
   dirty: boolean;
   ahead: number | undefined;
+  behind: number | undefined;
 };
 
 export type GitStatusReader = (
@@ -61,10 +62,11 @@ function parseStatus(output: string): GitStatus | undefined {
     return undefined;
   }
 
-  const match = /^\+(\d+) -\d+$/u.exec(headers.get('branch.ab') ?? '');
+  const match = /^\+(\d+) -(\d+)$/u.exec(headers.get('branch.ab') ?? '');
   const ahead = match ? Number(match[1]) : undefined;
+  const behind = match ? Number(match[2]) : undefined;
 
-  return { branch, dirty, ahead };
+  return { branch, dirty, ahead, behind };
 }
 
 function statusBranch(headers: Map<string, string>): string | undefined {

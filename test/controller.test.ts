@@ -1923,7 +1923,12 @@ void test('overflowing tabs keep the selected terminal visible and clickable at 
 
 void test('each Place shows its own Git branch in the sidebar, including collapsed background Places', async () => {
   const { config, manager } = setup();
-  let status = { branch: 'main', dirty: true, ahead: 2 as number | undefined };
+  let status = {
+    branch: 'main',
+    dirty: true,
+    ahead: 2 as number | undefined,
+    behind: 3 as number | undefined,
+  };
   const git = new GitBranches(
     () => {
       /* Test stub. */
@@ -1932,7 +1937,7 @@ void test('each Place shows its own Git branch in the sidebar, including collaps
       Promise.resolve(
         directory === '/tmp'
           ? status
-          : { branch: 'feature/x', dirty: false, ahead: 0 },
+          : { branch: 'feature/x', dirty: false, ahead: 0, behind: 0 },
       ),
   );
   const controller = new Controller(
@@ -1969,11 +1974,42 @@ void test('each Place shows its own Git branch in the sidebar, including collaps
     )
     .join('\n');
 
-  assert.match(sidebar, /First\s+main ● ↑2/u);
+  assert.match(sidebar, /First\s+main ↑2 ↓3/u);
   assert.match(sidebar, /Second\s+feature\/x/u);
+  assert.doesNotMatch(sidebar, /●/u);
+
+  const assertBranchColor = (
+    rendered: ReturnType<typeof renderFrame>,
+    branch: string,
+    color: number,
+  ) => {
+    const row = defined(
+      rendered.cells.find((cells) =>
+        cells
+          .map((cell) => cell.text)
+          .join('')
+          .includes(branch),
+      ),
+    );
+    const start = row
+      .map((cell) => cell.text)
+      .join('')
+      .indexOf(branch);
+    for (const cell of row.slice(start, start + branch.length)) {
+      assert.equal(cell.style.fg, color);
+    }
+  };
+
+  assertBranchColor(frame, 'main', controller.theme.colors.yellow);
+  assertBranchColor(frame, 'feature/x', controller.theme.colors.muted);
 
   config.sidebarWidth = 20;
-  status = { branch: 'feature/a-very-long-name', dirty: true, ahead: 123 };
+  status = {
+    branch: 'feature/a-very-long-name',
+    dirty: true,
+    ahead: 123,
+    behind: 456,
+  };
   await git.refresh(config.places);
   const narrow = renderFrame(controller);
   const placeRow = defined(narrow.cells[controller.geometry.sidebar.y]);
@@ -1982,17 +2018,30 @@ void test('each Place shows its own Git branch in the sidebar, including collaps
       .slice(0, 20)
       .map((cell) => cell.text)
       .join(''),
-    /● ↑123\s*$/u,
+    / ↑123 ↓456\s*$/u,
   );
   assert.equal(placeRow[20]?.text, '│', 'indicators stay inside the sidebar');
 
-  status = { branch: 'main', dirty: false, ahead: undefined };
+  status = {
+    branch: 'main',
+    dirty: false,
+    ahead: undefined,
+    behind: undefined,
+  };
   await git.refresh(config.places);
   assert.match(renderFrame(controller).plainText(), /main ↑\?/u);
+  assert.doesNotMatch(renderFrame(controller).plainText(), /↓/u);
 
-  status = { branch: 'main', dirty: false, ahead: 0 };
+  status = { branch: 'main', dirty: false, ahead: 0, behind: 4 };
   await git.refresh(config.places);
-  assert.doesNotMatch(renderFrame(controller).plainText(), /[●↑]/u);
+  assert.match(renderFrame(controller).plainText(), /main ↓4/u);
+  assert.doesNotMatch(renderFrame(controller).plainText(), /↑/u);
+
+  status = { branch: 'main', dirty: false, ahead: 0, behind: 0 };
+  await git.refresh(config.places);
+  const clean = renderFrame(controller);
+  assert.doesNotMatch(clean.plainText(), /[●↑↓]/u);
+  assertBranchColor(clean, 'main', controller.theme.colors.muted);
 
   git.dispose();
 });
