@@ -1,3 +1,4 @@
+import { getIconChar } from '@rezi-ui/core';
 import { defined } from '../defined.js';
 import { SHORTCUTS, shortcutVisibleRows } from '../shortcuts.js';
 import { Frame } from './Frame.js';
@@ -79,7 +80,7 @@ export function renderFrame(
   renderSidebar(context);
   renderTabs(context);
   renderTerminal(context);
-  renderFooter(context);
+  renderNotice(context);
   if (c.modal) {
     renderModal(frame, c);
   }
@@ -160,7 +161,7 @@ function renderSidebar(context: FrameContext): void {
   const sidebarWidth = geometry.sidebar.w;
 
   frame.fill(
-    { x: 0, y: 0, w: sidebarWidth, h: c.rows - 1 },
+    { x: 0, y: 0, w: sidebarWidth, h: c.rows },
     { fg: colors.fg, bg: colors.sidebar },
   );
   frame.text(1, 0, '◆ Ducks', {
@@ -169,7 +170,7 @@ function renderSidebar(context: FrameContext): void {
     bold: true,
   });
 
-  for (let y = 0; y < c.rows - 1; y++) {
+  for (let y = 0; y < c.rows; y++) {
     frame.text(sidebarWidth, y, '│', { ...baseStyle, fg: colors.line });
   }
 
@@ -249,37 +250,16 @@ function renderTabs(context: FrameContext): void {
   }
 }
 
-function renderFooter(context: FrameContext): void {
-  const { c, frame, colors } = context;
-  const footerStyle = { fg: colors.muted, bg: colors.sidebar };
-
-  frame.fill({ x: 0, y: c.rows - 1, w: c.cols, h: 1 }, footerStyle);
-
-  let footer = c.message || 'Ctrl+B · Commands · Ctrl+B ? · Help';
-  if (c.prefix) {
-    footer =
-      'Ctrl+B → p Prompt · f Find · a Agent · s Place · z Close Agent · x Close Place · ? Help';
+function renderNotice(context: FrameContext): void {
+  const { c, frame, geometry, colors } = context;
+  const message = c.closing ? 'Closing terminals…' : c.message;
+  if (!message) {
+    return;
   }
 
-  if (c.closing) {
-    footer = 'Closing terminals…';
-  }
-
-  let foreground = c.message ? colors.yellow : colors.muted;
-  if (c.prefix) {
-    foreground = colors.accent;
-  }
-
-  frame.text(
-    1,
-    c.rows - 1,
-    footer,
-    {
-      ...footerStyle,
-      fg: foreground,
-    },
-    c.cols - 2,
-  );
+  const style = { fg: colors.yellow, bg: colors.sidebar };
+  frame.fill({ x: 0, y: c.rows - 1, w: geometry.sidebar.w, h: 1 }, style);
+  frame.text(1, c.rows - 1, message, style, geometry.sidebar.w - 2);
 }
 
 function renderPromptModal(
@@ -588,7 +568,7 @@ function renderTerminal(context: FrameContext): void {
       const label = session.error ?? '';
       frame.text(
         geometry.terminal.x,
-        c.rows - 2,
+        c.rows - 1,
         label,
         { ...baseStyle, fg: session.error ? colors.red : colors.muted },
         geometry.terminal.w,
@@ -596,7 +576,7 @@ function renderTerminal(context: FrameContext): void {
     } else if (snapshot.scrollOffset) {
       frame.text(
         geometry.terminal.x,
-        c.rows - 2,
+        c.rows - 1,
         `History: ${snapshot.scrollOffset} lines up · Shift+PgDn to return`,
         { ...baseStyle, fg: colors.yellow },
         geometry.terminal.w,
@@ -752,11 +732,20 @@ function renderPlaceRow(
 ): void {
   const { c, frame, geometry, colors } = context;
   const sidebarWidth = geometry.sidebar.w;
-  const branch = c.git.get(place);
+  const git = c.git.getStatus(place);
+  const branch = git?.branch;
+  const dirty = git?.dirty ? ` ${getIconChar('git.modified')}` : '';
+  const ahead = git && git.ahead !== 0 ? ` ↑${git.ahead ?? '?'}` : '';
+  const indicatorsWidth = textWidth(dirty + ahead);
   const branchWidth = branch
-    ? Math.min(20, textWidth(branch), sidebarWidth - 12)
+    ? Math.min(
+        20,
+        textWidth(branch),
+        Math.max(1, sidebarWidth - 12 - indicatorsWidth),
+      )
     : 0;
-  const nameWidth = sidebarWidth - 4 - (branch ? branchWidth + 1 : 0);
+  const nameWidth =
+    sidebarWidth - 4 - (branch ? branchWidth + indicatorsWidth + 1 : 0);
 
   const style = {
     fg: selected ? colors.accent : colors.fg,
@@ -774,6 +763,12 @@ function renderPlaceRow(
       { fg: colors.muted, bg },
       branchWidth,
     );
+    const indicatorX = 3 + nameWidth + 1 + branchWidth;
+    frame.text(indicatorX, y, dirty, { fg: colors.yellow, bg });
+    frame.text(indicatorX + textWidth(dirty), y, ahead, {
+      fg: colors.accent,
+      bg,
+    });
   }
 }
 

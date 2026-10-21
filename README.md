@@ -29,6 +29,8 @@ npm start -- --place /path/to/project
 
 Press `Ctrl+B`, then `a` to open another terminal, `s` to add a Place, `?` for help, or `q` to quit.
 
+Git branches in the sidebar show `●` for uncommitted changes (including untracked files) and `↑N` for commits ahead of the upstream branch. `↑?` means the upstream count is unavailable. Status refreshes every second using local Git data; Ducks does not fetch from remotes.
+
 To run directly from source during development:
 
 ```sh

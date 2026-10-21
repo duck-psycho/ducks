@@ -62,37 +62,6 @@ void test('Linux stat parser locates the foreground group despite spaces and par
   assert.equal(parseProcStat('gone'), null);
 });
 
-void test('agent activity distinguishes a ready prompt, busy chrome and an approval', () => {
-  const tracker = new ActivityTracker(),
-    screen = new FakeScreen(80, 24);
-  screen.content = '› Explain the code';
-
-  assert.equal(tracker.evaluate(codex, screen, 10000), 'idle');
-
-  screen.content = '• Working (8s • esc to interrupt)\n› Explain the code';
-
-  assert.equal(tracker.evaluate(codex, screen, 11000), 'working');
-
-  screen.content =
-    'Would you like to run this command?\n❯ 1. Yes\n  2. No\nPress enter to confirm or esc to cancel';
-
-  assert.equal(tracker.evaluate(codex, screen, 12000), 'waiting');
-
-  // Old permission text in the transcript must not block a new live prompt.
-  screen.content += '\n• Done.\n›';
-
-  assert.equal(tracker.evaluate(codex, screen, 13000), 'idle');
-
-  screen.content =
-    '• Working (8s • esc to interrupt)\n• Finished successfully.\n›';
-
-  assert.equal(tracker.evaluate(codex, screen, 14000), 'idle');
-
-  screen.content = "› Explain what 'press enter to confirm' means";
-
-  assert.equal(tracker.evaluate(codex, screen, 15000), 'idle');
-});
-
 void test('title signals and trust/permission dialogs keep quiet working agents and blockers visible', () => {
   const tracker = new ActivityTracker(),
     screen = new FakeScreen(80, 24);

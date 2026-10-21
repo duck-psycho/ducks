@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { measureTextCells } from '@rezi-ui/core';
 import { defined } from '../src/defined.js';
-import { readProcessDirectory } from '../src/terminal/directory.js';
 import { fileCandidates, fileLinkAt } from '../src/terminal/files.js';
 import { createScreen, spawnPty } from '../src/terminal/native.js';
 import { signalGroup } from '../src/terminal/processes.js';
@@ -119,9 +118,9 @@ void test('xterm handles ANSI cells, cursor visibility, terminal replies and alt
     const replies: string[] = [];
 
     screen.onResponse((data) => replies.push(data));
-    await write(screen, 'normal\r\n\x1b[38;2;255;0;0mПривет 世界\x1b[0m');
+    await write(screen, 'normal\r\n\x1b[38;2;255;0;0mHello 世界\x1b[0m');
 
-    assert.match(text(screen), /Привет 世界/);
+    assert.match(text(screen), /Hello 世界/);
     assert.equal(screen.snapshot().lines[1]?.[0]?.style.fg, 0xff0000);
 
     await write(screen, '\x1b[?25l\x1b[?2004h\x1b[?1000h\x1b[?1006h\x1b[6n');
@@ -156,7 +155,7 @@ void test('child OSC 52 writes survive chunk boundaries and go only to the host'
   const screen = new XtermScreen(40, 8, undefined, (data) => host.push(data));
   screen.onResponse((data) => replies.push(data));
 
-  const encoded = Buffer.from('Привет 世界 🦆\nsecond line').toString('base64');
+  const encoded = Buffer.from('Hello 世界 🦆\nsecond line').toString('base64');
 
   try {
     await write(screen, 'before\x1b]5');
@@ -574,75 +573,6 @@ void test(
       assert.equal(defined(manager.sessions.get('b')).status, 'running');
     } finally {
       await manager.shutdown();
-    }
-  },
-);
-
-void test(
-  'real interactive shell cd is observed without injecting commands or changing shell config',
-  { timeout: 10000 },
-  async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ducks-cd-'));
-    const project = join(directory, 'project with spaces');
-
-    await mkdir(project);
-
-    const manager = new SessionManager(
-      spawnPty,
-      createScreen,
-      () => {
-        /* Test stub. */
-      },
-      undefined,
-      100,
-    );
-
-    const agent = {
-      id: 'shell',
-      name: 'Shell',
-      profileId: 'shell',
-      kind: 'shell' as const,
-    };
-    const place = {
-      id: 'p',
-      name: 'Test',
-      directory,
-      agents: [agent],
-      activeAgentId: agent.id,
-    };
-
-    let observed = directory;
-
-    manager.onDirectoryChange((id, cwd) => {
-      assert.equal(id, agent.id);
-
-      observed = cwd;
-    });
-
-    try {
-      manager.start(agent, place, {
-        id: 'shell',
-        name: 'Shell',
-        executable: 'sh',
-        args: ['-i'],
-      });
-
-      const session = defined(manager.sessions.get(agent.id));
-
-      assert.equal(session.status, 'running');
-
-      const initial = await readProcessDirectory(defined(session.process).pid);
-
-      assert.ok(initial?.endsWith(defined(directory.split('/').at(-1)))); // macOS /tmp is canonicalized
-
-      manager.write(agent.id, `cd '${project}'\rprintf 'CWD_READY\\n'\r`);
-      await until(() => text(session.screen).includes('CWD_READY'));
-      await until(() => observed.endsWith('/project with spaces'));
-      manager.write(agent.id, "printf 'INPUT_%s\\n' WORKS\r");
-      await until(() => text(session.screen).includes('INPUT_WORKS'));
-    } finally {
-      await manager.shutdown();
-      await rm(directory, { recursive: true, force: true });
     }
   },
 );

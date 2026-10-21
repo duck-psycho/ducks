@@ -45,12 +45,8 @@ void test('thread names exclude agent activity and project segments from Codex a
     'Fix auth',
   );
   assert.equal(
-    ThreadNameTracker.fromTitle(
-      claude,
-      '✳ Исправить авторизацию 世界',
-      directory,
-    ),
-    'Исправить авторизацию 世界',
+    ThreadNameTracker.fromTitle(claude, '✳ Fix authentication 世界', directory),
+    'Fix authentication 世界',
   );
   assert.equal(
     ThreadNameTracker.fromTitle(claude, '◐ Fix auth', directory),

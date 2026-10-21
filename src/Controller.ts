@@ -469,7 +469,7 @@ export class Controller {
       x: this.geometry.sidebar.w,
       y: 0,
       w: 1,
-      h: this.rows - 1,
+      h: this.rows,
     };
 
     return inside(divider, event.x, event.y);

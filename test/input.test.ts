@@ -43,8 +43,8 @@ void test('special keys respect child terminal modes and modifiers', () => {
 });
 void test('paste preserves Unicode and frames multiline input according to child mode', () => {
   assert.equal(
-    encodePaste('Привет\n世界', { ...MODES, bracketedPasteMode: true }),
-    '\x1b[200~Привет\n世界\x1b[201~',
+    encodePaste('Hello\n世界', { ...MODES, bracketedPasteMode: true }),
+    '\x1b[200~Hello\n世界\x1b[201~',
   );
   assert.equal(encodePaste('a\r\nb\nc', MODES), 'a\rb\rc');
   assert.equal(

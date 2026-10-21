@@ -1,5 +1,5 @@
-import { readGitBranch } from './git.js';
-import type { BranchReader } from './git.js';
+import { readGitStatus } from './git.js';
+import type { GitStatus, GitStatusReader } from './git.js';
 import type { Place } from './model.js';
 /** Runtime metadata stays out of saved configuration. Reads never block input. */
 export class GitBranches {
@@ -7,7 +7,7 @@ export class GitBranches {
     string,
     {
       directory: string;
-      branch: string | undefined;
+      status: GitStatus | undefined;
       pending: Promise<void> | null;
     }
   >();
@@ -16,13 +16,17 @@ export class GitBranches {
   private _disposed = false;
   public constructor(
     private readonly _changed: () => void,
-    private readonly _read: BranchReader = readGitBranch,
+    private readonly _read: GitStatusReader = readGitStatus,
   ) {}
 
   public get(place: Place): string | undefined {
+    return this.getStatus(place)?.branch;
+  }
+
+  public getStatus(place: Place): GitStatus | undefined {
     const entry = this._entries.get(place.id);
 
-    return entry?.directory === place.directory ? entry.branch : undefined;
+    return entry?.directory === place.directory ? entry.status : undefined;
   }
 
   public async refresh(places: ReadonlyArray<Place>): Promise<void> {
@@ -41,10 +45,10 @@ export class GitBranches {
       places.map((place) => {
         let entry = this._entries.get(place.id);
         if (entry?.directory !== place.directory) {
-          const hadBranch = Boolean(entry?.branch);
+          const hadBranch = Boolean(entry?.status);
           entry = {
             directory: place.directory,
-            branch: undefined,
+            status: undefined,
             pending: null,
           };
           this._entries.set(place.id, entry);
@@ -61,13 +65,17 @@ export class GitBranches {
         current.pending = Promise.resolve()
           .then(() => this._read(current.directory))
           .catch((): undefined => undefined)
-          .then((branch) => {
+          .then((status) => {
             if (this._disposed || this._entries.get(place.id) !== current) {
               return;
             }
 
-            if (current.branch !== branch) {
-              current.branch = branch;
+            if (
+              current.status?.branch !== status?.branch ||
+              current.status?.dirty !== status?.dirty ||
+              current.status?.ahead !== status?.ahead
+            ) {
+              current.status = status;
               this._changed();
             }
           })

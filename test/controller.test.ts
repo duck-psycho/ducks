@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -192,7 +199,11 @@ void test('resize pointer follows divider hover and drag and resets for dialogs,
     assert.equal(controller.pointerShape, '');
     hover(SIDEBAR_WIDTH, controller.rows - 1);
 
-    assert.equal(controller.pointerShape, '', 'footer is not a resize handle');
+    assert.equal(
+      controller.pointerShape,
+      'ew-resize',
+      'divider reaches the bottom row',
+    );
     hover(SIDEBAR_WIDTH);
     command('m');
 
@@ -1063,9 +1074,9 @@ void test('prompt edits multiline Unicode, keeps drafts per agent and sends only
     key('enter', true);
     controller.handle({ kind: 'text', text: 'first line' });
     key('enter');
-    controller.handle({ kind: 'paste', text: 'вторая строка\r\n🦆' });
+    controller.handle({ kind: 'paste', text: 'second line\r\n🦆' });
     key('backspace');
-    controller.handle({ kind: 'text', text: 'готово' });
+    controller.handle({ kind: 'text', text: 'done' });
     key('c', true);
 
     assert.deepEqual(
@@ -1095,10 +1106,7 @@ void test('prompt edits multiline Unicode, keeps drafts per agent and sends only
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Controller methods mutate modal despite prior type narrowing.
     assert.ok(controller.modal.kind === 'prompt');
-    assert.equal(
-      controller.modal.editor.text,
-      'first line\nвторая строка\nготово',
-    );
+    assert.equal(controller.modal.editor.text, 'first line\nsecond line\ndone');
 
     controller.selectAgent('q', 'c');
     key('enter', true);
@@ -1106,7 +1114,7 @@ void test('prompt edits multiline Unicode, keeps drafts per agent and sends only
     assert.equal(Boolean(controller.modal), false);
     assert.deepEqual(
       children.map((child) => child.writes),
-      [['\x1b[200~first line\nвторая строка\nготово\x1b[201~', '\r'], [], []],
+      [['\x1b[200~first line\nsecond line\ndone\x1b[201~', '\r'], [], []],
     );
     assert.equal(controller.agent?.id, 'a');
 
@@ -1349,10 +1357,14 @@ void test('closing a Place removes all its sessions and selects the next Place w
     defined(manager.sessions.get('b')).screen,
   ] as FakeScreen[];
   const saved = context.saved;
+  const directory = await mkdtemp(join(tmpdir(), 'ducks-close-place-'));
+  const projectFile = join(directory, 'keep.txt');
+  defined(config.places[0]).directory = directory;
 
   controller.collapsed.add('p');
 
   try {
+    await writeFile(projectFile, 'project contents');
     command('x');
     key('enter');
     await new Promise<void>((resolve) => setImmediate(resolve));
@@ -1376,8 +1388,10 @@ void test('closing a Place removes all its sessions and selects the next Place w
     controller.handle({ kind: 'text', text: 'surviving terminal' });
 
     assert.deepEqual(defined(children[2]).writes, ['surviving terminal']);
+    assert.equal(await readFile(projectFile, 'utf8'), 'project contents');
   } finally {
     await manager.shutdown();
+    await rm(directory, { recursive: true, force: true });
   }
 });
 
@@ -1795,7 +1809,7 @@ void test('rendered UI shows agent activity as colored indicators without status
 
   assert.doesNotMatch(text, /PLACES|Running|Starting|Stopped|Exited|■/);
   assert.match(text, /First/);
-  assert.match(text, /Ctrl\+B/);
+  assert.doesNotMatch(text, /Ctrl\+B/);
   assert.equal(controller.tabHits.length, 2);
 
   defined(manager.sessions.get('a')).activity = 'working';
@@ -1934,11 +1948,17 @@ void test('overflowing tabs keep the selected terminal visible and clickable at 
 
 void test('each Place shows its own Git branch in the sidebar, including collapsed background Places', async () => {
   const { config, manager } = setup();
+  let status = { branch: 'main', dirty: true, ahead: 2 as number | undefined };
   const git = new GitBranches(
     () => {
       /* Test stub. */
     },
-    (directory) => Promise.resolve(directory === '/tmp' ? 'main' : 'feature/x'),
+    (directory) =>
+      Promise.resolve(
+        directory === '/tmp'
+          ? status
+          : { branch: 'feature/x', dirty: false, ahead: 0 },
+      ),
   );
   const controller = new Controller(
     config,
@@ -1974,8 +1994,30 @@ void test('each Place shows its own Git branch in the sidebar, including collaps
     )
     .join('\n');
 
-  assert.match(sidebar, /First\s+main/u);
+  assert.match(sidebar, /First\s+main ● ↑2/u);
   assert.match(sidebar, /Second\s+feature\/x/u);
+
+  config.sidebarWidth = 20;
+  status = { branch: 'feature/a-very-long-name', dirty: true, ahead: 123 };
+  await git.refresh(config.places);
+  const narrow = renderFrame(controller);
+  const placeRow = defined(narrow.cells[controller.geometry.sidebar.y]);
+  assert.match(
+    placeRow
+      .slice(0, 20)
+      .map((cell) => cell.text)
+      .join(''),
+    /● ↑123\s*$/u,
+  );
+  assert.equal(placeRow[20]?.text, '│', 'indicators stay inside the sidebar');
+
+  status = { branch: 'main', dirty: false, ahead: undefined };
+  await git.refresh(config.places);
+  assert.match(renderFrame(controller).plainText(), /main ↑\?/u);
+
+  status = { branch: 'main', dirty: false, ahead: 0 };
+  await git.refresh(config.places);
+  assert.doesNotMatch(renderFrame(controller).plainText(), /[●↑]/u);
 
   git.dispose();
 });

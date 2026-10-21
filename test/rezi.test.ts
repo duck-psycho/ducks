@@ -223,7 +223,7 @@ void test('real Rezi event loop forwards prompt text once and keeps q/Ctrl+C ins
 
     const events = new TestEventBuilder()
       .resize(100, 30)
-      .type('quick Q Привет 🦆')
+      .type('quick Q Hello 🦆')
       .pressKey('enter')
       .paste(new TextEncoder().encode('one\ntwo'))
       .add({ kind: 'text', codepoint: 3 }) // legacy Ctrl+C as text
@@ -240,7 +240,7 @@ void test('real Rezi event loop forwards prompt text once and keeps q/Ctrl+C ins
       receive(events.buildBatch({ onRelease: resolve }));
     });
 
-    assert.equal(child.writes.join(''), 'quick Q Привет 🦆\rone\rtwo\x03 A');
+    assert.equal(child.writes.join(''), 'quick Q Hello 🦆\rone\rtwo\x03 A');
     assert.equal(stopped, false, 'q/Ctrl+C must not stop the multiplexer');
     assert.equal(controller.prefix, false);
   } finally {

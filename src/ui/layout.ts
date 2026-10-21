@@ -29,13 +29,13 @@ export function layout(
 
   return {
     small: cols < 80 || rows < 24,
-    sidebar: { x: 0, y: 1, w: sidebarWidth, h: Math.max(0, rows - 3) },
+    sidebar: { x: 0, y: 1, w: sidebarWidth, h: Math.max(0, rows - 1) },
     tabs: { x: terminalX, y: 0, w: Math.max(0, cols - terminalX), h: 1 },
     terminal: {
       x: terminalX,
       y: 1,
       w: Math.max(2, cols - terminalX - 1),
-      h: Math.max(1, rows - 3),
+      h: Math.max(1, rows - 1),
     },
   };
 }

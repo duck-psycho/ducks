@@ -28,7 +28,7 @@ void test('queued PTY output reaches the screen in order without loss or duplica
     },
   );
 
-  const chunks = ['first\r\n', 'Привет 🦆\r\n', 'last'];
+  const chunks = ['first\r\n', 'Hello 🦆\r\n', 'last'];
   for (const chunk of chunks) {
     child.output(chunk);
   }
@@ -54,29 +54,7 @@ void test('queued PTY output reaches the screen in order without loss or duplica
   );
 });
 
-void test('closing an output pipe ignores subsequent PTY output', () => {
-  const child = new FakePty();
-  const screen = new FakeScreen(80, 24);
-  const subscription = pipeOutput(
-    child,
-    screen,
-    () => {
-      /* Test stub. */
-    },
-    () => {
-      /* Test stub. */
-    },
-  );
-
-  child.output('before close');
-  subscription.dispose();
-  subscription.dispose();
-  child.output('ignored');
-
-  assert.equal(screen.content, 'before close');
-});
-
-void test('closing a pipe cancels an already queued screen notification', async () => {
+void test('closing an output pipe ignores later output and cancels queued notifications', async () => {
   const child = new FakePty();
   const screen = new FakeScreen(80, 24);
   let rendered = '';
@@ -91,9 +69,12 @@ void test('closing a pipe cancels an already queued screen notification', async 
     },
   );
 
-  child.output('closed');
+  child.output('before close');
   subscription.dispose();
+  subscription.dispose();
+  child.output('ignored');
   await Promise.resolve();
 
+  assert.equal(screen.content, 'before close');
   assert.equal(rendered, '');
 });

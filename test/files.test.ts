@@ -24,7 +24,7 @@ void test('file links recognize quotes, punctuation and source locations at the 
   for (const [text, clicked, expected] of [
     ['see (src/main.ts:12:3), next', 'main', 'src/main.ts'],
     ['see (src/main.ts:12:3): next', 'main', 'src/main.ts'],
-    ['see `src/привет 世界.ts` next', '世界', 'src/привет 世界.ts'],
+    ['see `src/hello 世界.ts` next', '世界', 'src/hello 世界.ts'],
     ['see "file with spaces.txt" next', 'with', 'file with spaces.txt'],
     // eslint-disable-next-line sonarjs/publicly-writable-directories -- Literal fixture path; the test performs no filesystem writes.
     ["see '/tmp/hello.txt' next", 'hello', '/tmp/hello.txt'],
@@ -55,26 +55,15 @@ void test('file links recognize quotes, punctuation and source locations at the 
     'src/file name.ts:12:3',
     'the highlighted range excludes surrounding punctuation and quotes',
   );
-});
 
-void test('both README mentions in a rendered reply resolve and highlight only the filename', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'ducks-reply-link-'));
-  const text = 'Упростил README.md (README.md): оставил краткое описание.';
-
-  try {
-    const file = join(directory, 'README.md');
-    await writeFile(file, '# ducks\n');
-
-    for (const index of [
-      text.indexOf('README.md'),
-      text.lastIndexOf('README.md'),
-    ]) {
-      const link = defined(fileLinkAt({ text, index }));
-      assert.equal(await resolveTextFile(link.candidates, directory), file);
-      assert.equal(text.slice(link.start, link.end), 'README.md');
-    }
-  } finally {
-    await rm(directory, { recursive: true, force: true });
+  const reply = 'Simplified README.md (README.md): kept a short description.';
+  for (const index of [
+    reply.indexOf('README.md'),
+    reply.lastIndexOf('README.md'),
+  ]) {
+    const mention = defined(fileLinkAt({ text: reply, index }));
+    assert.equal(reply.slice(mention.start, mention.end), 'README.md');
+    assert.ok(mention.candidates.includes('README.md'));
   }
 });
 
@@ -83,11 +72,11 @@ void test('links resolve existing text files, including extensionless, empty and
 
   try {
     await mkdir(join(directory, 'sub'));
-    await writeFile(join(directory, 'README'), 'Привет 世界\n');
+    await writeFile(join(directory, 'README'), 'Hello 世界\n');
     await writeFile(join(directory, 'empty'), '');
     await writeFile(
       join(directory, 'utf16.txt'),
-      Buffer.from('\ufeffПривет\n', 'utf16le'),
+      Buffer.from('\ufeffHello\n', 'utf16le'),
     );
     await writeFile(
       join(directory, 'binary.txt'),

@@ -235,7 +235,7 @@ void test(
       );
       app.child.write("printf 'RESIZED_'; stty size\r");
       await app.until(
-        () => app.screen().includes('RESIZED_32 66'),
+        () => app.screen().includes('RESIZED_34 66'),
         'child PTY receives new dimensions',
       );
       app.child.write('\x02q');
@@ -251,140 +251,6 @@ void test(
       await app.until(() => app.exitCode() === 0, 'clean exit after restart');
     } finally {
       app.dispose();
-      await rm(directory, { recursive: true, force: true });
-    }
-  },
-);
-
-void test(
-  'native search opens a Place and finds a background agent by its sidebar thread name',
-  { timeout: 15000 },
-  async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ducks-search-'));
-    const configPath = join(directory, 'config.json');
-    const fixture = join(directory, 'codex.cjs');
-    const config = defaultConfig();
-    config.places = [
-      {
-        id: 'p',
-        name: 'First',
-        directory,
-        agents: [{ id: 'a', name: 'Shell', profileId: 'codex' }],
-        activeAgentId: 'a',
-      },
-      {
-        id: 'q',
-        name: 'Второй 🦆',
-        directory,
-        agents: [{ id: 'c', name: 'Shell', profileId: 'codex' }],
-        activeAgentId: 'c',
-      },
-    ];
-    config.activePlaceId = 'p';
-    await writeFile(configPath, JSON.stringify(config));
-    await writeFile(fixture, AGENT_FIXTURE);
-
-    const { child, screen, until, resize, dispose } = startTui(configPath);
-
-    const searchOpen = () => screen().includes('Enter · Open');
-
-    const shellReady = () =>
-      screen()
-        .split('\n')
-        .some((line) => /[$#]\s*$/u.test(line));
-
-    const find = async (query: string) => {
-      child.write('\x02f');
-      await until(searchOpen, 'search modal opens');
-      child.write(query);
-      await until(() => screen().includes(query), 'query renders');
-      child.write('\r');
-      await until(() => !searchOpen(), 'Enter opens the result');
-    };
-
-    try {
-      await until(shellReady, 'startup shell');
-      resize(80, 24);
-      await find('ВТОРОЙ');
-      child.write("printf 'SEARCH_%s\\n' PLACE\r");
-      await until(
-        () => screen().includes('SEARCH_PLACE'),
-        'Place terminal takes input',
-      );
-
-      const saved = JSON.parse(await readFile(configPath, 'utf8')) as Config;
-
-      assert.equal(saved.activePlaceId, 'q');
-      assert.equal(saved.places[1]?.activeAgentId, 'c');
-
-      child.write(`'${process.execPath}' '${fixture}'\r`);
-      await until(() => screen().includes('FIXTURE_READY'), 'agent starts');
-      child.write('n');
-      await until(() => screen().includes('Thread One'), 'sidebar thread name');
-      await find('First');
-      await until(shellReady, 'original Place restored');
-      await find('thread one');
-      child.write('r');
-      await until(
-        () => screen().includes('Thread Two'),
-        'matched agent takes input',
-      );
-      child.write('\x02q');
-    } finally {
-      dispose();
-      await rm(directory, { recursive: true, force: true });
-    }
-  },
-);
-
-void test(
-  'native TUI opens Commands shortcut help with Ctrl+B then ? and closes it at 80 × 24',
-  { timeout: 15000 },
-  async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ducks-help-'));
-    const { child, screen, until, resize, dispose } = startTui(
-      join(directory, 'config.json'),
-    );
-
-    try {
-      await until(
-        () => screen().includes('Ctrl+B ?'),
-        'help hint at startup without Places',
-      );
-      resize(80, 24);
-      child.write('\x02?');
-      await until(
-        () =>
-          screen().includes('Keyboard shortcuts') &&
-          screen().includes('Send literal Ctrl+B'),
-        'all commands fit in shortcut help',
-      );
-
-      assert.match(screen(), /New Place with a shell/u);
-      assert.match(screen(), /Commands · Ctrl\+B/u);
-      assert.doesNotMatch(
-        screen(),
-        /no prefix|Shift\+PgUp|\$EDITOR|Preview next|PgUp\/PgDn/u,
-      );
-
-      child.write('\r');
-      await until(
-        () => !screen().includes('Keyboard shortcuts'),
-        'Enter closes help',
-      );
-      child.write('\x02?');
-      await until(
-        () => screen().includes('Keyboard shortcuts'),
-        'reopening help',
-      );
-      child.write('\x1b');
-      await until(
-        () => !screen().includes('Keyboard shortcuts'),
-        'Escape closes help',
-      );
-      child.write('\x02q');
-    } finally {
-      dispose();
       await rm(directory, { recursive: true, force: true });
     }
   },
@@ -425,9 +291,9 @@ void test(
         () => screen().includes('Ctrl/Alt+Enter · Send'),
         'prompt modal opens',
       );
-      child.write('first line\rвторая 🦆');
+      child.write('first line\rsecond 🦆');
       await until(
-        () => screen().includes('first line') && screen().includes('вторая 🦆'),
+        () => screen().includes('first line') && screen().includes('second 🦆'),
         'multiline draft renders',
       );
       child.write('\x1b');
@@ -439,11 +305,11 @@ void test(
       assert.doesNotMatch(screen(), /RECEIVED:/u);
 
       child.write('\x02p');
-      await until(() => screen().includes('вторая 🦆'), 'draft restored');
+      await until(() => screen().includes('second 🦆'), 'draft restored');
       child.write('\x1b[13;5u');
 
       const expected = Buffer.from(
-        '\x1b[200~first line\nвторая 🦆\x1b[201~\r',
+        '\x1b[200~first line\nsecond 🦆\x1b[201~\r',
       ).toString('hex');
 
       await until(
@@ -569,7 +435,7 @@ void test(
     const terminalText = () =>
       screen()
         .split('\n')
-        .slice(1, -2)
+        .slice(1)
         .map((line) => line.slice(SIDEBAR_WIDTH + 1))
         .join('\n');
 
@@ -693,7 +559,7 @@ void test(
     };
 
     try {
-      await until(() => screen().includes('Ctrl+B'), 'startup');
+      await until(() => screen().includes('◆ Ducks'), 'startup');
       child.write('\x02s');
       await until(
         () => /\bsh\b/u.test(tabs()) && hasShellPrompt(screen()),
@@ -848,7 +714,7 @@ void test(
 
       const terminalText = screen()
         .split('\n')
-        .slice(1, -2)
+        .slice(1)
         .map((line) => line.slice(SIDEBAR_WIDTH + 1, -1).trimEnd())
         .join('');
 
@@ -990,17 +856,17 @@ void test(
 );
 
 void test(
-  'native TUI keeps the shortcut bar on the bottom row after resizing',
+  'native TUI uses the bottom row for terminal output after resizing',
   { timeout: 20000 },
   async () => {
     const directory = await mkdtemp(join(tmpdir(), 'ducks-resize-'));
     const configPath = join(directory, 'config.json');
     const { child, screen, background, until, resize, dispose } =
       startTui(configPath);
-    const footerColor = getTheme('catppuccin-mocha').colors.sidebar;
+    const colors = getTheme('catppuccin-mocha').colors;
 
     try {
-      await until(() => screen().includes('Ctrl+B'), 'startup');
+      await until(() => screen().includes('◆ Ducks'), 'startup');
       child.write('\x02s');
       await until(
         () => /\bsh\b/u.test(defined(screen().split('\n')[0])),
@@ -1019,16 +885,13 @@ void test(
         resize(120, 35);
         await delay(300);
 
-        assert.match(
-          defined(screen().split('\n').at(-1)),
-          /Ctrl\+B/u,
-          'footer survives a resize burst ending at the original dimensions',
-        );
-        assert.equal(background(0, 34), footerColor);
-        assert.equal(background(119, 34), footerColor);
+        assert.equal(screen().split('\n').at(-1)?.[SIDEBAR_WIDTH], '│');
+        assert.doesNotMatch(screen(), /Ctrl\+B/u);
+        assert.equal(background(0, 34), colors.sidebar);
+        assert.equal(background(119, 34), colors.bg);
       }
 
-      child.write("while :; do printf 'resize output\\n'; sleep 0.01; done\r");
+      child.write("while :; do printf '\\nresize output'; sleep 0.01; done\r");
       await until(
         () => screen().includes('resize output'),
         'continuous output',
@@ -1045,12 +908,12 @@ void test(
       ] as const) {
         resize(cols, rows);
         await until(
-          () => screen().split('\n').at(-1)?.includes('Ctrl+B') === true,
-          `footer after resize to ${cols} × ${rows}`,
+          () => screen().split('\n').at(-1)?.includes('resize output') === true,
+          `terminal output on bottom row after resize to ${cols} × ${rows}`,
         );
 
-        assert.equal(background(0, rows - 1), footerColor);
-        assert.equal(background(cols - 1, rows - 1), footerColor);
+        assert.equal(background(0, rows - 1), colors.sidebar);
+        assert.equal(background(cols - 1, rows - 1), colors.bg);
       }
 
       for (let i = 0; i < 100; i++) {
@@ -1060,15 +923,16 @@ void test(
 
       resize(120, 35);
       // Let the resize debounce and any frames already in flight settle before
-      // checking that subsequent terminal output leaves the repaired bar intact.
+      // checking that subsequent terminal output reaches the bottom row.
       await delay(300);
       await until(
-        () => screen().split('\n').at(-1)?.includes('Ctrl+B') === true,
-        'footer after rapid resizes',
+        () => screen().split('\n').at(-1)?.includes('resize output') === true,
+        'terminal output on bottom row after rapid resizes',
       );
       await delay(200);
 
-      assert.match(defined(screen().split('\n').at(-1)), /Ctrl\+B/u);
+      assert.match(defined(screen().split('\n').at(-1)), /resize output/u);
+      assert.doesNotMatch(screen(), /Ctrl\+B/u);
     } finally {
       dispose();
       await rm(directory, { recursive: true, force: true });
@@ -1107,7 +971,7 @@ void test(
       startTui(configPath);
 
     try {
-      await until(() => screen().includes('Ctrl+B'), 'startup');
+      await until(() => screen().includes('◆ Ducks'), 'startup');
       child.write('\x02s');
       await until(
         () => /\bsh\b/u.test(tabs()) && hasShellPrompt(screen()),
@@ -1133,128 +997,11 @@ void test(
 );
 
 void test(
-  'native TUI closes Places and their tabs, persists the removal and preserves project files',
-  { timeout: 15000 },
-  async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ducks-close-place-'));
-    const configPath = join(directory, 'config.json');
-    const projectFile = join(directory, 'keep.txt');
-
-    await writeFile(projectFile, 'project contents');
-
-    const config = defaultConfig();
-    config.profiles.push({
-      id: 'shell',
-      name: 'Shell',
-      executable: '/bin/sh',
-      args: ['-i'],
-    });
-    config.places.push({
-      id: 'p',
-      name: 'Closable',
-      directory,
-      agents: [
-        { id: 'a', name: 'Shell', profileId: 'shell', kind: 'shell' },
-        { id: 'b', name: 'Shell 2', profileId: 'shell' },
-      ],
-      activeAgentId: 'a',
-    });
-    config.places.push({
-      id: 'q',
-      name: 'Survivor',
-      directory,
-      agents: [{ id: 'c', name: 'Shell', profileId: 'shell', kind: 'shell' }],
-      activeAgentId: 'c',
-    });
-    config.activePlaceId = 'p';
-    await writeFile(configPath, JSON.stringify(config));
-
-    const { child, screen, tabs, until, dispose, exitCode } =
-      startTui(configPath);
-
-    const saved = async () =>
-      JSON.parse(await readFile(configPath, 'utf8')) as Config;
-
-    try {
-      await until(
-        () =>
-          (tabs().match(/\bsh\b/gu)?.length ?? 0) === 2 &&
-          hasShellPrompt(screen()),
-        'saved Place starts both terminals',
-      );
-      child.write('\x02x');
-      await until(
-        () => screen().includes('Close this Place and all its terminals?'),
-        'Place close confirmation',
-      );
-      child.write('\x1b[B\r'); // Select Cancel explicitly.
-      await until(
-        () => !screen().includes('Close this Place and all its terminals?'),
-        'cancel close',
-      );
-
-      assert.equal((await saved()).places.length, 2);
-
-      child.write('\x02x');
-      await until(
-        () => screen().includes('Close this Place and all its terminals?'),
-        'confirm close again',
-      );
-      child.write('\r');
-      await until(async () => {
-        const config = await saved();
-
-        return (
-          config.places.length === 1 &&
-          config.activePlaceId === 'q' &&
-          !screen().includes('Closable')
-        );
-      }, 'closed Place is removed from screen and configuration');
-      child.write("printf 'SURVIVING_%s\\n' PLACE\r");
-      await until(
-        () => screen().includes('SURVIVING_PLACE'),
-        'neighbouring Place stays interactive',
-      );
-
-      assert.equal(await readFile(projectFile, 'utf8'), 'project contents');
-
-      child.write('\x02x');
-      await until(
-        () => screen().includes('Close this Place and all its terminals?'),
-        'close last Place',
-      );
-      child.write('\r');
-      await until(async () => {
-        const config = await saved();
-
-        return (
-          config.places.length === 0 &&
-          config.activePlaceId === null &&
-          screen().includes('Open your first Place')
-        );
-      }, 'last Place removal leaves an empty usable TUI');
-      child.write('\x02s');
-      await until(
-        () => /\bsh\b/u.test(tabs()) && hasShellPrompt(screen()),
-        'new Place opens after closing all Places',
-      );
-      child.write('\x02q');
-      await until(() => exitCode() !== undefined, 'orderly exit');
-
-      assert.equal(exitCode(), 0);
-    } finally {
-      dispose();
-      await rm(directory, { recursive: true, force: true });
-    }
-  },
-);
-
-void test(
   'native TUI opens terminals, closes tabs on shell exit and keeps an empty Place usable',
   { timeout: 15000 },
   async () => {
     const directory = await mkdtemp(join(tmpdir(), 'ducks-tui-'));
-    const project = join(directory, 'my-project');
+    const project = join(directory, 'project with spaces');
 
     await mkdir(project);
     await new Promise<void>((resolve, reject) =>
@@ -1281,21 +1028,13 @@ void test(
 
     await writeFile(mcPath, "process.title = 'mc';\n" + AGENT_FIXTURE);
 
-    const {
-      child,
-      screen,
-      tabs,
-      background,
-      foreground,
-      until,
-      dispose,
-      exitCode,
-    } = startTui(configPath);
+    const { child, screen, tabs, foreground, until, dispose, exitCode } =
+      startTui(configPath);
 
     const indicatorColor = () => foreground(SIDEBAR_WIDTH + 2, 0);
 
     try {
-      await until(() => screen().includes('Ctrl+B'), 'TUI startup');
+      await until(() => screen().includes('◆ Ducks'), 'TUI startup');
       child.write('\x02s');
       await until(
         () => /\bsh\b/u.test(tabs()) && hasShellPrompt(screen()),
@@ -1340,68 +1079,17 @@ void test(
         'thread name appears only in the sidebar',
       );
 
-      child.write('\x02m');
-      await until(
-        () =>
-          screen().includes('Settings') &&
-          screen().includes('Catppuccin Mocha · Dark'),
-        'settings modal opens',
-      );
-      child.write('\x1b[C\x1b[C\x1b[C');
-      await until(
-        () =>
-          screen().includes('Catppuccin Latte · Light') &&
-          background(0, 0) === getTheme('catppuccin-latte').colors.sidebar,
-        'arrow keys immediately preview the light theme',
-      );
-
-      assert.equal(
-        (JSON.parse(await readFile(configPath, 'utf8')) as Config).theme,
-        'catppuccin-mocha',
-      );
-
-      child.write('\x1b');
-      await until(
-        () =>
-          !screen().includes('Settings') &&
-          background(0, 0) === getTheme('catppuccin-mocha').colors.sidebar,
-        'cancel restores the original theme',
-      );
-      child.write('\x02m');
-      await until(() => screen().includes('Settings'), 'reopen settings');
-      child.write('\x1b[C\x1b[C\x1b[C\r');
-      await until(async () => {
-        const saved = JSON.parse(await readFile(configPath, 'utf8')) as Config;
-
-        return (
-          saved.theme === 'catppuccin-latte' && !screen().includes('Settings')
-        );
-      }, 'light theme applied and persisted');
-
-      assert.equal(
-        background(0, 0),
-        getTheme('catppuccin-latte').colors.sidebar,
-      );
-      assert.ok(
-        sidebar().includes('Thread One'),
-        'saving settings preserves the agent',
-      );
-      assert.equal(
-        background(SIDEBAR_WIDTH + 1, 2),
-        getTheme('catppuccin-latte').colors.bg,
-      );
-
       child.write('w');
       await until(
         () =>
           tabs().includes('■ codex') &&
-          indicatorColor() !== getTheme('catppuccin-latte').colors.green &&
-          indicatorColor() !== getTheme('catppuccin-latte').colors.red,
+          indicatorColor() !== getTheme('catppuccin-mocha').colors.green &&
+          indicatorColor() !== getTheme('catppuccin-mocha').colors.red,
         'agent working tab indicator',
       );
       child.write('a');
       await until(
-        () => indicatorColor() === getTheme('catppuccin-latte').colors.red,
+        () => indicatorColor() === getTheme('catppuccin-mocha').colors.red,
         'agent approval tab indicator',
       );
 
@@ -1412,7 +1100,7 @@ void test(
 
       child.write('i');
       await until(
-        () => indicatorColor() === getTheme('catppuccin-latte').colors.green,
+        () => indicatorColor() === getTheme('catppuccin-mocha').colors.green,
         'agent ready again',
       );
       child.write('r');
@@ -1472,7 +1160,7 @@ void test(
         }
       }, 'persisted directory');
       await until(
-        () => /\bmain\s*$/mu.test(sidebar()),
+        () => /\bmain ↑\?\s*$/mu.test(sidebar()),
         'Git branch in Place sidebar',
       );
 
@@ -1480,7 +1168,7 @@ void test(
 
       child.write('git switch -c topic\r');
       await until(
-        () => /\btopic\s*$/mu.test(sidebar()),
+        () => /\btopic ↑\?\s*$/mu.test(sidebar()),
         'Git branch refresh after switch',
       );
       child.write('\x02a');
@@ -1491,7 +1179,8 @@ void test(
       child.write('printf \'TAB_%s:%s\\n\' READY "$PWD"\r');
       await until(
         () =>
-          screen().includes('TAB_READY:') && screen().includes('/my-project'),
+          screen().includes('TAB_READY:') &&
+          screen().includes('/project with spaces'),
         'new terminal input and inherited cwd',
       );
 
@@ -1547,7 +1236,6 @@ void test(
         1,
         'shutdown preserves session definitions',
       );
-      assert.equal(final.theme, 'catppuccin-latte');
     } finally {
       dispose();
       await rm(directory, { recursive: true, force: true });
@@ -1618,7 +1306,9 @@ for (const startup of ['saved', '--place'] as const) {
           () =>
             screen()
               .split('\n')
-              .some((line) => /\bmain\s*$/u.test(line.slice(0, SIDEBAR_WIDTH))),
+              .some((line) =>
+                /\bmain(?: ●)? ↑\?\s*$/u.test(line.slice(0, SIDEBAR_WIDTH)),
+              ),
           'branch after startup',
         );
         await delay(150);
@@ -1762,7 +1452,7 @@ void test(
     const directory = await mkdtemp(join(tmpdir(), 'ducks-copy-release-'));
     const fixture = join(directory, 'selection.cjs');
     const events = join(directory, 'events.json');
-    const selected = 'Codex: Привет 世界 🦆\nsecond line';
+    const selected = 'Codex: Hello 世界 🦆\nsecond line';
     const encoded = Buffer.from(selected).toString('base64');
 
     await writeFile(

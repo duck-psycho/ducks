@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { defined } from '../src/defined.js';
-import { readGitBranch } from '../src/git.js';
+import { readGitBranch, readGitStatus } from '../src/git.js';
 import { GitBranches } from '../src/GitBranches.js';
+import type { GitStatus } from '../src/git.js';
 import type { Place } from '../src/model.js';
 
 function runGit(directory: string, ...args: string[]): Promise<void> {
@@ -84,7 +85,12 @@ void test('branch refresh observes branch changes and removes Git labels after c
     () => {
       displayed = monitor.get(place);
     },
-    (directory) => Promise.resolve(directory === '/repo' ? branch : undefined),
+    (directory) =>
+      Promise.resolve(
+        directory === '/repo' && branch
+          ? { branch, dirty: false, ahead: 0 }
+          : undefined,
+      ),
   );
 
   const place: Place = {
@@ -122,8 +128,102 @@ void test('branch refresh observes branch changes and removes Git labels after c
   monitor.dispose();
 });
 
+void test('Git status tracks untracked, staged and unstaged files and commits ahead of upstream', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'ducks-git-status-'));
+  const repo = join(root, 'repo');
+  const remote = join(root, 'remote.git');
+  const nested = join(repo, 'nested');
+  await mkdir(nested, { recursive: true });
+  await mkdir(remote);
+
+  try {
+    await runGit(repo, 'init', '--initial-branch=main', '--template=');
+    assert.deepEqual(await readGitStatus(repo), {
+      branch: 'main',
+      dirty: false,
+      ahead: undefined,
+    });
+    await writeFile(join(repo, 'file\n# branch.ab +999 -0'), 'initial');
+    assert.equal((await readGitStatus(nested))?.dirty, true);
+    await runGit(repo, 'add', '.');
+    assert.equal((await readGitStatus(repo))?.dirty, true);
+    await runGit(repo, 'commit', '-m', 'initial');
+    await runGit(remote, 'init', '--bare', '--template=');
+    await runGit(repo, 'remote', 'add', 'origin', remote);
+    await runGit(repo, 'push', '-u', 'origin', 'main');
+    assert.deepEqual(await readGitStatus(nested), {
+      branch: 'main',
+      dirty: false,
+      ahead: 0,
+    });
+    await writeFile(join(repo, 'file\n# branch.ab +999 -0'), 'modified');
+    assert.deepEqual(await readGitStatus(nested), {
+      branch: 'main',
+      dirty: true,
+      ahead: 0,
+    });
+    await runGit(repo, 'commit', '-am', 'change');
+    await runGit(repo, 'commit', '--allow-empty', '-m', 'another');
+    assert.deepEqual(await readGitStatus(repo), {
+      branch: 'main',
+      dirty: false,
+      ahead: 2,
+    });
+    await runGit(repo, 'push');
+    assert.equal((await readGitStatus(repo))?.ahead, 0);
+    await runGit(repo, 'config', 'status.showUntrackedFiles', 'no');
+    await runGit(repo, 'config', 'status.aheadBehind', 'false');
+    await writeFile(join(repo, 'new-file'), 'untracked');
+    assert.deepEqual(await readGitStatus(nested), {
+      branch: 'main',
+      dirty: true,
+      ahead: 0,
+    });
+    await rm(join(repo, 'new-file'));
+    await mkdir(join(repo, '.git', 'info'));
+    await writeFile(join(repo, '.git', 'info', 'exclude'), 'ignored\n');
+    await writeFile(join(repo, 'ignored'), 'ignored');
+    assert.equal((await readGitStatus(repo))?.dirty, false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+void test('status refresh repaints dirty and ahead changes on the same branch', async () => {
+  let status: GitStatus = { branch: 'main', dirty: false, ahead: 0 };
+  let changes = 0;
+  const monitor = new GitBranches(
+    () => {
+      changes++;
+    },
+    () => Promise.resolve({ ...status }),
+  );
+  const place: Place = {
+    id: 'p',
+    name: 'Project',
+    directory: '/repo',
+    agents: [],
+    activeAgentId: null,
+  };
+  await monitor.refresh([place]);
+  await monitor.refresh([place]);
+  assert.equal(changes, 1);
+  status = { ...status, dirty: true };
+  await monitor.refresh([place]);
+  assert.equal(changes, 2);
+  assert.equal(monitor.getStatus(place)?.dirty, true);
+  status = { ...status, dirty: false, ahead: 2 };
+  await monitor.refresh([place]);
+  assert.equal(changes, 3);
+  assert.deepEqual(monitor.getStatus(place), status);
+  status = { ...status, ahead: 0 };
+  await monitor.refresh([place]);
+  assert.equal(changes, 4);
+  monitor.dispose();
+});
+
 void test('slow Git reads cannot overwrite a new directory, removed Place or disposed monitor', async () => {
-  const replies = new Map<string, (branch: string) => void>();
+  const replies = new Map<string, (status: GitStatus) => void>();
   let displayed: string | undefined;
   const monitor = new GitBranches(
     () => {
@@ -150,9 +250,17 @@ void test('slow Git reads cannot overwrite a new directory, removed Place or dis
   const next = monitor.refresh([place]);
 
   await Promise.resolve();
-  defined(replies.get('/new'))('new-branch');
+  defined(replies.get('/new'))({
+    branch: 'new-branch',
+    dirty: false,
+    ahead: 0,
+  });
   await next;
-  defined(replies.get('/old'))('old-branch');
+  defined(replies.get('/old'))({
+    branch: 'old-branch',
+    dirty: false,
+    ahead: 0,
+  });
   await old;
 
   assert.equal(monitor.get(place), 'new-branch');
@@ -162,7 +270,11 @@ void test('slow Git reads cannot overwrite a new directory, removed Place or dis
 
   await Promise.resolve();
   await monitor.refresh([]);
-  defined(replies.get('/new'))('removed-branch');
+  defined(replies.get('/new'))({
+    branch: 'removed-branch',
+    dirty: false,
+    ahead: 0,
+  });
   await removed;
 
   assert.equal(monitor.get(place), undefined);
@@ -176,7 +288,11 @@ void test('slow Git reads cannot overwrite a new directory, removed Place or dis
 
   await Promise.resolve();
   monitor.dispose();
-  defined(replies.get('/new'))('late-branch');
+  defined(replies.get('/new'))({
+    branch: 'late-branch',
+    dirty: false,
+    ahead: 0,
+  });
   await disposed;
 
   assert.equal(monitor.get(place), undefined);
