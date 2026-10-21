@@ -371,6 +371,10 @@ export class SessionManager {
     this._untrackActivity(id);
     session.stopRequested = true;
 
+    // Drain the PTY without rendering shell/job diagnostics during teardown.
+    this._output.get(id)?.dispose();
+    this._output.delete(id);
+
     const operation = (async () => {
       await stopProcessGroups(
         child.pid,
@@ -380,8 +384,6 @@ export class SessionManager {
         this._readGroups,
       );
 
-      this._output.get(id)?.dispose();
-      this._output.delete(id);
       if (session.process === child) {
         session.process = null;
         session.status = 'stopped';

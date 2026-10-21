@@ -170,7 +170,7 @@ void test('exit notifications exclude deliberate stops and shutdown', async () =
   assert.deepEqual(exited, [agent.id]);
 });
 
-void test('a shell that ignores hangup is still killed after the grace period', async () => {
+void test('closing a shell hides shutdown output and still kills it after the grace period', async () => {
   const child = new FakePty();
   const signals: (string | number)[] = [];
   const manager = new SessionManager(
@@ -181,7 +181,12 @@ void test('a shell that ignores hangup is still killed after the grace period', 
     },
     (_pid, signal) => {
       signals.push(signal);
+      if (signal === 'SIGHUP') {
+        child.output('zsh: warning: 1 jobs SIGHUPed\r\n');
+      }
+
       if (signal === 'SIGKILL') {
+        child.output('late shutdown output\r\n');
         child.exit(137);
       }
     },
@@ -195,9 +200,13 @@ void test('a shell that ignores hangup is still killed after the grace period', 
     args: ['-i'],
   });
 
+  const screen = defined(manager.sessions.get(agent.id)).screen as FakeScreen;
+  child.output('previous terminal output\r\n');
+
   try {
     await manager.stop(agent.id);
 
+    assert.equal(screen.content, 'previous terminal output\r\n');
     assert.equal(signals[0], 'SIGHUP');
     assert.equal(signals.at(-1), 'SIGKILL');
     assert.equal(manager.sessions.get(agent.id)?.status, 'stopped');
