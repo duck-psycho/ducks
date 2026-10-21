@@ -6,8 +6,6 @@ A terminal multiplexer for CLI agents. Organize working directories into Places,
   <img src="docs/screenshots/overview.png" alt="Ducks with three Places, Git branches, multiple agent tabs, and activity indicators" width="800">
 </p>
 
-*The screenshots show the real Ducks interface with prepared demo sessions and agent output.*
-
 ## Requirements
 
 - Linux or macOS, Node.js ≥22.13, and npm.
