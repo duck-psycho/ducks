@@ -12,8 +12,15 @@ function color(value: number) {
 export function view(controller: Controller, repaint = false): VNode {
   const frame = renderFrame(controller);
 
-  return ui.column(
-    { width: frame.cols, height: frame.rows, gap: 0, p: 0, overflow: 'hidden' },
+  const surface = ui.column(
+    {
+      key: 'terminal-surface',
+      width: frame.cols,
+      height: frame.rows,
+      gap: 0,
+      p: 0,
+      overflow: 'hidden',
+    },
     frame.cells.map((_, y) =>
       ui.row(
         {
@@ -55,4 +62,35 @@ export function view(controller: Controller, repaint = false): VNode {
       ),
     ),
   );
+
+  const colors = controller.theme.colors;
+
+  return ui.layers([
+    surface,
+    controller.themeNotice && !controller.closing && !controller.geometry.small
+      ? ui.toastContainer({
+          key: 'theme-notice',
+          position: 'top-right',
+          width: 74,
+          maxVisible: 1,
+          frameStyle: {
+            background: color(colors.sidebar),
+            foreground: color(colors.fg),
+            border: color(colors.yellow),
+          },
+          toasts: [
+            {
+              id: 'theme-changed',
+              type: 'warning',
+              message:
+                'Theme changed. Some agents may need a restart to update all colors.',
+              duration: 5000,
+            },
+          ],
+          onClose: () => {
+            controller.dismissThemeNotice();
+          },
+        })
+      : null,
+  ]);
 }

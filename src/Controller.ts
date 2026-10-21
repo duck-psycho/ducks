@@ -71,10 +71,12 @@ export class Controller {
   public busy = false;
   public closing = false;
   public message = '';
+  public themeNotice = false;
   public prefixUntil = 0;
   public tabHits: { rect: Rect; agentId: string }[] = [];
   public modalHits: { rect: Rect; index: number }[] = [];
   private _prefixTimer: ReturnType<typeof setTimeout> | null = null;
+  private _themeNoticeTimer: ReturnType<typeof setTimeout> | undefined;
   private _fileClick = false;
   private _sidebarDrag: number | null = null;
   private _pointerEvent: Extract<InputEvent, { kind: 'mouse' }> | null = null;
@@ -358,6 +360,7 @@ export class Controller {
     this._changed();
 
     this.git.dispose();
+    clearTimeout(this._themeNoticeTimer);
     if (this._prefixTimer) {
       clearTimeout(this._prefixTimer);
     }
@@ -369,6 +372,12 @@ export class Controller {
     } finally {
       await this._exit();
     }
+  }
+
+  public dismissThemeNotice(): void {
+    clearTimeout(this._themeNoticeTimer);
+    this.themeNotice = false;
+    this._changed();
   }
 
   public handle(event: InputEvent): void {
@@ -1208,14 +1217,27 @@ export class Controller {
     }
 
     if (key === 'enter') {
+      const changed = this.config.theme !== modal.theme;
       this.config.theme = modal.theme;
       this.modal = null;
       this._persist();
+      if (changed) {
+        this._showThemeNotice();
+      }
     }
 
     if (key === 'escape') {
       this.modal = null;
     }
+  }
+
+  private _showThemeNotice(): void {
+    clearTimeout(this._themeNoticeTimer);
+    this.themeNotice = true;
+    this._themeNoticeTimer = setTimeout(() => {
+      this.dismissThemeNotice();
+    }, 5000);
+    this._themeNoticeTimer.unref();
   }
 
   private _menuInput(event: InputEvent, modal: Menu): void {
