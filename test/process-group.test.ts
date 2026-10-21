@@ -166,8 +166,8 @@ void test(
     const { mkdtemp, writeFile, readFile, rm } =
       await import('node:fs/promises');
     const { tmpdir } = await import('node:os');
-    const { spawnPty, createScreen } =
-      await import('../src/terminal/native.js');
+    const { spawnPty } = await import('../src/terminal/native.js');
+    const { XtermScreen } = await import('../src/terminal/XtermScreen.js');
     const directory = await mkdtemp(join(tmpdir(), 'ducks-job-groups-'));
     const fixture = join(directory, 'job.cjs');
 
@@ -179,7 +179,7 @@ void test(
 
     const manager = new SessionManager(
       spawnPty,
-      createScreen,
+      (cols, rows) => new XtermScreen(cols, rows),
       () => {
         /* Test stub. */
       },

@@ -1,12 +1,35 @@
 import { rgb, ui } from '@rezi-ui/core';
 import { renderFrame } from './view.js';
+import type { Frame } from './Frame.js';
 import type { Controller } from '../Controller.js';
 import type { VNode } from '@rezi-ui/core';
 export { attachInput } from './input.js';
-export { WORKING_FRAME_MS } from './view.js';
 
 function color(value: number) {
   return rgb((value >> 16) & 255, (value >> 8) & 255, value & 255);
+}
+
+function textRow(frame: Frame, y: number, repaint: boolean): VNode {
+  return ui.richText(
+    frame.runs(y).map((run) => ({
+      text: run.text,
+      style: {
+        // Equivalent SGR encodings invalidate the native cell diff after resize.
+        fg: color(
+          Boolean(run.style.inverse) !== repaint ? run.style.bg : run.style.fg,
+        ),
+        bg: color(
+          Boolean(run.style.inverse) !== repaint ? run.style.fg : run.style.bg,
+        ),
+        inverse: repaint,
+        bold: run.style.bold ?? false,
+        dim: run.style.dim ?? false,
+        italic: run.style.italic ?? false,
+        underline: run.style.underline ?? false,
+        strikethrough: run.style.strikethrough ?? false,
+      },
+    })),
+  );
 }
 
 export function view(controller: Controller, repaint = false): VNode {
@@ -31,34 +54,7 @@ export function view(controller: Controller, repaint = false): VNode {
           p: 0,
           overflow: 'hidden',
         },
-        [
-          ui.richText(
-            frame.runs(y).map((run) => ({
-              text: run.text,
-              style: {
-                // Equivalent SGR encodings invalidate the native cell diff without
-                // flashing a blank frame or changing the visible colors. Rezi does
-                // not expose screen invalidation for a missed shrink/grow resize.
-                fg: color(
-                  Boolean(run.style.inverse) !== repaint
-                    ? run.style.bg
-                    : run.style.fg,
-                ),
-                bg: color(
-                  Boolean(run.style.inverse) !== repaint
-                    ? run.style.fg
-                    : run.style.bg,
-                ),
-                inverse: repaint,
-                bold: run.style.bold ?? false,
-                dim: run.style.dim ?? false,
-                italic: run.style.italic ?? false,
-                underline: run.style.underline ?? false,
-                strikethrough: run.style.strikethrough ?? false,
-              },
-            })),
-          ),
-        ],
+        [textRow(frame, y, repaint)],
       ),
     ),
   );

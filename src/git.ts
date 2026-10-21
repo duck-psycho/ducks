@@ -83,9 +83,3 @@ function statusBranch(headers: Map<string, string>): string | undefined {
 
   return branch;
 }
-
-export async function readGitBranch(
-  directory: string,
-): Promise<string | undefined> {
-  return (await readGitStatus(directory))?.branch;
-}

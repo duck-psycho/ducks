@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { defined } from '../src/defined.js';
-import { readGitBranch, readGitStatus } from '../src/git.js';
+import { readGitStatus } from '../src/git.js';
 import { GitBranches } from '../src/GitBranches.js';
 import type { GitStatus } from '../src/git.js';
 import type { Place } from '../src/model.js';
@@ -53,26 +53,29 @@ void test('Git branch detection handles unborn branches, nested directories, wor
   await mkdir(nested, { recursive: true });
 
   try {
-    assert.equal(await readGitBranch(root), undefined);
-    assert.equal(await readGitBranch(join(root, 'missing')), undefined);
+    assert.equal(await readGitStatus(root), undefined);
+    assert.equal(await readGitStatus(join(root, 'missing')), undefined);
 
     await runGit(repo, 'init', '--initial-branch=main', '--template=');
 
-    assert.equal(await readGitBranch(nested), 'main');
+    assert.equal((await readGitStatus(nested))?.branch, 'main');
 
     await runGit(repo, 'commit', '--allow-empty', '-m', 'fixture');
     await runGit(repo, 'worktree', 'add', '-b', 'feature/worktree', worktree);
 
-    assert.equal(await readGitBranch(worktree), 'feature/worktree');
-    assert.equal(await readGitBranch(repo), 'main');
+    assert.equal((await readGitStatus(worktree))?.branch, 'feature/worktree');
+    assert.equal((await readGitStatus(repo))?.branch, 'main');
 
     await runGit(repo, 'switch', '-c', 'topic');
 
-    assert.equal(await readGitBranch(nested), 'topic');
+    assert.equal((await readGitStatus(nested))?.branch, 'topic');
 
     await runGit(repo, 'checkout', '--detach');
 
-    assert.match(defined(await readGitBranch(repo)), /^detached:[a-f0-9]+$/u);
+    assert.match(
+      defined((await readGitStatus(repo))?.branch),
+      /^detached:[a-f0-9]+$/u,
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -83,7 +86,7 @@ void test('branch refresh observes branch changes and removes Git labels after c
   let displayed: string | undefined;
   const monitor = new GitBranches(
     () => {
-      displayed = monitor.get(place);
+      displayed = monitor.getStatus(place)?.branch;
     },
     (directory) =>
       Promise.resolve(
@@ -103,26 +106,26 @@ void test('branch refresh observes branch changes and removes Git labels after c
 
   await monitor.refresh([place]);
 
-  assert.equal(monitor.get(place), 'main');
+  assert.equal(monitor.getStatus(place)?.branch, 'main');
   assert.equal(displayed, 'main');
 
   branch = 'topic';
   await monitor.refresh([place]);
 
-  assert.equal(monitor.get(place), 'topic');
+  assert.equal(monitor.getStatus(place)?.branch, 'topic');
   assert.equal(displayed, 'topic');
 
   place.directory = '/elsewhere';
 
   assert.equal(
-    monitor.get(place),
+    monitor.getStatus(place)?.branch,
     undefined,
     'old branches never appear on a different directory',
   );
 
   await monitor.refresh([place]);
 
-  assert.equal(monitor.get(place), undefined);
+  assert.equal(monitor.getStatus(place)?.branch, undefined);
   assert.equal(displayed, undefined);
 
   monitor.dispose();
@@ -227,7 +230,7 @@ void test('slow Git reads cannot overwrite a new directory, removed Place or dis
   let displayed: string | undefined;
   const monitor = new GitBranches(
     () => {
-      displayed = monitor.get(place);
+      displayed = monitor.getStatus(place)?.branch;
     },
     (directory) =>
       new Promise((resolve) => {
@@ -263,7 +266,7 @@ void test('slow Git reads cannot overwrite a new directory, removed Place or dis
   });
   await old;
 
-  assert.equal(monitor.get(place), 'new-branch');
+  assert.equal(monitor.getStatus(place)?.branch, 'new-branch');
   assert.equal(displayed, 'new-branch');
 
   const removed = monitor.refresh([place]);
@@ -277,7 +280,7 @@ void test('slow Git reads cannot overwrite a new directory, removed Place or dis
   });
   await removed;
 
-  assert.equal(monitor.get(place), undefined);
+  assert.equal(monitor.getStatus(place)?.branch, undefined);
   assert.equal(
     displayed,
     'new-branch',
@@ -295,7 +298,7 @@ void test('slow Git reads cannot overwrite a new directory, removed Place or dis
   });
   await disposed;
 
-  assert.equal(monitor.get(place), undefined);
+  assert.equal(monitor.getStatus(place)?.branch, undefined);
   assert.equal(
     displayed,
     'new-branch',

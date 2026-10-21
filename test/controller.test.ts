@@ -1803,7 +1803,7 @@ void test('adding a symlink of an existing Place selects it instead of duplicati
     await rm(directory, { recursive: true, force: true });
   }
 });
-void test('rendered UI shows agent activity as colored indicators without status labels in tabs', () => {
+void test('rendered UI shows agent activity as colored agent names without status labels in tabs', () => {
   const { controller, manager } = setup();
   const text = renderFrame(controller).plainText();
 
@@ -1818,7 +1818,7 @@ void test('rendered UI shows agent activity as colored indicators without status
   defined(manager.sessions.get('b')).processName = 'claude';
   defined(manager.sessions.get('b')).threadName = 'Thread One';
 
-  let frame = renderFrame(controller, 0);
+  let frame = renderFrame(controller);
   const sidebar = frame.cells
     .map((row) =>
       row
@@ -1828,8 +1828,8 @@ void test('rendered UI shows agent activity as colored indicators without status
     )
     .join('\n');
 
-  assert.match(sidebar, /■ Thread One/u);
-  assert.match(sidebar, /■ codex/u);
+  assert.match(sidebar, /› Thread One/u);
+  assert.match(sidebar, /› codex/u);
   assert.doesNotMatch(sidebar, /Claude|Working|Idle|Waiting/u);
   assert.equal(
     defined(defined(controller.place).agents[1]).name,
@@ -1842,10 +1842,11 @@ void test('rendered UI shows agent activity as colored indicators without status
     .map((cell) => cell.text)
     .join('');
 
-  assert.match(tabs, /■ codex\s+■ claude/u);
+  assert.match(tabs, /codex\s+claude/u);
+  assert.doesNotMatch(frame.plainText(), /■/u);
   assert.doesNotMatch(tabs, /Thread One|Working|Idle|Waiting for input/u);
 
-  const indicator = (agentId: string) => {
+  const label = (agentId: string) => {
     const hit = defined(
       controller.tabHits.find((hit) => hit.agentId === agentId),
     );
@@ -1853,55 +1854,29 @@ void test('rendered UI shows agent activity as colored indicators without status
     return defined(defined(frame.cells[hit.rect.y])[hit.rect.x + 1]);
   };
 
-  assert.equal(indicator('a').style.fg, controller.theme.colors.yellow);
-
-  const peakColor = indicator('a').style.fg;
-
-  assert.equal(indicator('b').style.fg, controller.theme.colors.red);
-
-  frame = renderFrame(controller, 100);
-
-  assert.equal(indicator('a').text, '■');
-  assert.notEqual(
-    indicator('a').style.fg,
-    peakColor,
-    'only brightness changes between animation frames',
-  );
+  assert.equal(label('a').style.fg, controller.theme.colors.yellow);
+  assert.equal(label('b').style.fg, controller.theme.colors.red);
+  assert.equal(label('a').text, 'c');
   assert.equal(
-    defined(defined(frame.cells[2])[2]).text,
-    indicator('a').text,
-    'sidebar and tab share the animation phase',
+    defined(defined(frame.cells[2])[4]).style.fg,
+    label('a').style.fg,
+    'sidebar and tab share the status color',
   );
+  assert.equal(label('b').text, 'c', 'waiting name remains visible');
   assert.equal(
-    defined(defined(frame.cells[2])[2]).style.fg,
-    indicator('a').style.fg,
-    'sidebar and tab share pulse brightness',
+    defined(defined(frame.cells[3])[4]).style.fg,
+    controller.theme.colors.red,
   );
-  assert.equal(
-    indicator('b').text,
-    '■',
-    'waiting status remains a steady square',
-  );
-  assert.equal(indicator('b').style.fg, controller.theme.colors.red);
 
   defined(manager.sessions.get('b')).activity = 'idle';
   frame = renderFrame(controller);
 
-  assert.equal(indicator('b').style.fg, controller.theme.colors.green);
-  assert.equal(indicator('b').text, '■');
-  assert.equal(defined(defined(frame.cells[3])[2]).text, '■');
+  assert.equal(label('b').style.fg, controller.theme.colors.green);
+  assert.equal(label('b').text, 'c');
+  assert.equal(defined(defined(frame.cells[3])[4]).text, 'T');
   assert.equal(
-    defined(defined(frame.cells[3])[2]).style.fg,
+    defined(defined(frame.cells[3])[4]).style.fg,
     controller.theme.colors.green,
-  );
-
-  controller.handle({ kind: 'resize', cols: 80, rows: 24 });
-  controller.selectAgent('p', 'b');
-  renderFrame(controller);
-
-  assert.ok(
-    controller.tabHits.some((hit) => hit.agentId === 'b'),
-    'active tab stays visible in a narrow window',
   );
 });
 

@@ -19,10 +19,6 @@ export class GitBranches {
     private readonly _read: GitStatusReader = readGitStatus,
   ) {}
 
-  public get(place: Place): string | undefined {
-    return this.getStatus(place)?.branch;
-  }
-
   public getStatus(place: Place): GitStatus | undefined {
     const entry = this._entries.get(place.id);
 

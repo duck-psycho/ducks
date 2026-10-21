@@ -10,23 +10,6 @@ import type { AgentDefinition, AgentActivity, Place } from '../model.js';
 import type { layout } from './layout.js';
 import type { CellStyle } from '../terminal/contracts.js';
 
-export const WORKING_FRAME_MS = 100;
-const WORKING_PULSE_MS = 1600;
-
-function pulseColor(color: number, background: number, now: number): number {
-  const brightness =
-    0.7 +
-    0.3 * Math.cos(((now % WORKING_PULSE_MS) / WORKING_PULSE_MS) * Math.PI * 2);
-  let mixed = 0;
-  for (const shift of [16, 8, 0]) {
-    const channel = (color >> shift) & 255,
-      base = (background >> shift) & 255;
-    mixed |= Math.round(base + (channel - base) * brightness) << shift;
-  }
-
-  return mixed;
-}
-
 function agentStatus(
   c: Controller,
   agent: AgentDefinition,
@@ -38,16 +21,13 @@ function processName(c: Controller, agent: AgentDefinition): string {
   return c.sessions.sessions.get(agent.id)?.processName ?? agent.name;
 }
 
-export function renderFrame(
-  controller: Controller,
-  now: number = Date.now(),
-): Frame {
+export function renderFrame(controller: Controller): Frame {
   const c = controller;
   const theme = c.theme;
   const colors = theme.colors;
   const baseStyle = { fg: colors.fg, bg: colors.bg };
   const statusColor: Record<AgentActivity, number> = {
-    working: pulseColor(colors.yellow, colors.bg, now),
+    working: colors.yellow,
     idle: colors.green,
     waiting: colors.red,
   };
@@ -201,19 +181,12 @@ function renderTabs(context: FrameContext): void {
   // Keep the active tab in view when the tab strip overflows.
   const activeIndex = agents.findIndex((a) => a.id === place?.activeAgentId);
 
-  const tabWidth = (agent: AgentDefinition) => {
-    const status = agentStatus(c, agent);
-    const nameWidth = textWidth(processName(c, agent));
-
-    return Math.min(22, Math.max(10, nameWidth + (status ? 4 : 2)));
-  };
-
   const widths = new Map<AgentDefinition, number>();
 
   const widthOf = (agent: AgentDefinition) => {
     let width = widths.get(agent);
     if (width === undefined) {
-      width = tabWidth(agent);
+      width = Math.min(22, Math.max(10, textWidth(processName(c, agent)) + 2));
       widths.set(agent, width);
     }
 
@@ -545,15 +518,12 @@ function renderTreeRow(
     const agent = defined(place.agents.find((a) => a.id === row.agentId));
     const status = agentStatus(c, agent);
 
-    frame.text(2, y, status ? '■' : '›', {
-      fg: status ? statusColor[status] : colors.muted,
-      bg,
-    });
+    frame.text(2, y, '›', { fg: colors.muted, bg });
     frame.text(
       4,
       y,
       c.agentName(agent),
-      { fg: colors.fg, bg },
+      { fg: status ? statusColor[status] : colors.fg, bg },
       sidebarWidth - 5,
     );
   }
@@ -702,20 +672,13 @@ function renderTab(
   };
 
   frame.fill({ x, y: geometry.tabs.y, w: width, h: 1 }, style);
-  if (status) {
-    frame.text(x + 1, geometry.tabs.y, '■', {
-      ...style,
-      fg: statusColor[status],
-    });
-  }
 
-  const nameOffset = status ? 3 : 1;
   frame.text(
-    x + nameOffset,
+    x + 1,
     geometry.tabs.y,
     processName(c, agent),
-    style,
-    width - nameOffset - 1,
+    { ...style, fg: status ? statusColor[status] : style.fg },
+    width - 2,
   );
   c.tabHits.push({
     rect: { x, y: geometry.tabs.y, w: width, h: 1 },

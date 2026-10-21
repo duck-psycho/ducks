@@ -414,116 +414,6 @@ void test(
 );
 
 void test(
-  'working squares pulse without new PTY output and settle into steady idle and waiting squares',
-  { timeout: 15000 },
-  async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'ducks-spinner-'));
-    const fixturePath = join(directory, 'codex.cjs');
-
-    await writeFile(fixturePath, AGENT_FIXTURE);
-
-    const { child, screen, tabs, foreground, until, dispose } = startTui(
-      join(directory, 'config.json'),
-      ['--place', directory],
-    );
-    const colors = getTheme('catppuccin-mocha').colors;
-
-    const indicator = () => tabs().trimStart()[0];
-
-    const sidebarIndicator = () => screen().split('\n')[2]?.[2];
-
-    const terminalText = () =>
-      screen()
-        .split('\n')
-        .slice(1)
-        .map((line) => line.slice(SIDEBAR_WIDTH + 1))
-        .join('\n');
-
-    try {
-      await until(
-        () => /\bsh\b/u.test(tabs()) && hasShellPrompt(screen()),
-        'source shell',
-      );
-      child.write(`'${process.execPath}' '${fixturePath}'\r`);
-      await until(
-        () =>
-          tabs().includes('■ codex') &&
-          foreground(SIDEBAR_WIDTH + 2, 0) === colors.green,
-        'idle agent',
-      );
-      child.write('w');
-      await until(
-        () =>
-          indicator() === '■' &&
-          foreground(SIDEBAR_WIDTH + 2, 0) !== colors.green &&
-          foreground(SIDEBAR_WIDTH + 2, 0) !== colors.red,
-        'working square',
-      );
-
-      const first = foreground(SIDEBAR_WIDTH + 2, 0);
-      const output = terminalText();
-
-      await until(
-        () => foreground(SIDEBAR_WIDTH + 2, 0) !== first,
-        'square brightness changes while agent is silent',
-      );
-
-      assert.equal(indicator(), '■', 'animation never changes the glyph');
-      assert.equal(
-        terminalText(),
-        output,
-        'animation does not change terminal content',
-      );
-      assert.equal(
-        sidebarIndicator(),
-        indicator(),
-        'sidebar and tab use the same square',
-      );
-      assert.equal(
-        foreground(2, 2),
-        foreground(SIDEBAR_WIDTH + 2, 0),
-        'sidebar and tab pulse together',
-      );
-
-      child.write('i');
-      await until(
-        () =>
-          indicator() === '■' &&
-          foreground(SIDEBAR_WIDTH + 2, 0) === colors.green &&
-          sidebarIndicator() === '■' &&
-          foreground(2, 2) === colors.green,
-        'idle stops animation',
-      );
-      await delay(250);
-
-      assert.equal(indicator(), '■');
-      assert.equal(foreground(SIDEBAR_WIDTH + 2, 0), colors.green);
-      assert.equal(sidebarIndicator(), '■');
-      assert.equal(foreground(2, 2), colors.green);
-
-      child.write('a');
-      await until(
-        () =>
-          indicator() === '■' &&
-          foreground(SIDEBAR_WIDTH + 2, 0) === colors.red &&
-          sidebarIndicator() === '■' &&
-          foreground(2, 2) === colors.red,
-        'approval remains a red square',
-      );
-      child.write('q');
-      await until(
-        () => /\bsh\b/u.test(tabs()) && hasShellPrompt(screen()),
-        'return to shell',
-      );
-      child.write('\x02q');
-    } finally {
-      dispose();
-      await rm(directory, { recursive: true, force: true });
-    }
-  },
-);
-
-void test(
   'native TUI preserves wheel direction for mouse-aware programs and terminal history',
   { timeout: 15000 },
   async () => {
@@ -1031,7 +921,8 @@ void test(
     const { child, screen, tabs, foreground, until, dispose, exitCode } =
       startTui(configPath);
 
-    const indicatorColor = () => foreground(SIDEBAR_WIDTH + 2, 0);
+    const nameColor = () => foreground(SIDEBAR_WIDTH + 2, 0);
+    const colors = getTheme('catppuccin-mocha').colors;
 
     try {
       await until(() => screen().includes('◆ Ducks'), 'TUI startup');
@@ -1057,9 +948,10 @@ void test(
         () =>
           screen().includes('FIXTURE_READY') &&
           tabs().includes('codex') &&
-          indicatorColor() === getTheme('catppuccin-mocha').colors.green &&
+          nameColor() === colors.green &&
+          foreground(4, 2) === colors.green &&
           sidebar().includes('codex'),
-        'unnamed agent uses its active process name and colored indicator in sidebar and tab',
+        'unnamed agent uses its active process name and colored name in sidebar and tab',
       );
       child.write('n');
       await until(
@@ -1067,11 +959,8 @@ void test(
         'thread name replaces Shell in sidebar',
       );
 
-      assert.match(
-        tabs(),
-        /■ codex/u,
-        'tab uses the active process and agent indicator',
-      );
+      assert.match(tabs(), /codex/u, 'tab uses the active process name');
+      assert.doesNotMatch(tabs(), /■/u);
       assert.doesNotMatch(tabs(), /Working|Idle|Waiting for input/u);
       assert.doesNotMatch(
         tabs(),
@@ -1082,15 +971,15 @@ void test(
       child.write('w');
       await until(
         () =>
-          tabs().includes('■ codex') &&
-          indicatorColor() !== getTheme('catppuccin-mocha').colors.green &&
-          indicatorColor() !== getTheme('catppuccin-mocha').colors.red,
-        'agent working tab indicator',
+          tabs().includes('codex') &&
+          nameColor() === colors.yellow &&
+          foreground(4, 2) === colors.yellow,
+        'agent working name',
       );
       child.write('a');
       await until(
-        () => indicatorColor() === getTheme('catppuccin-mocha').colors.red,
-        'agent approval tab indicator',
+        () => nameColor() === colors.red && foreground(4, 2) === colors.red,
+        'agent approval name',
       );
 
       assert.ok(
@@ -1100,7 +989,7 @@ void test(
 
       child.write('i');
       await until(
-        () => indicatorColor() === getTheme('catppuccin-mocha').colors.green,
+        () => nameColor() === colors.green && foreground(4, 2) === colors.green,
         'agent ready again',
       );
       child.write('r');
@@ -1109,7 +998,7 @@ void test(
         'thread rename updates sidebar live',
       );
 
-      assert.match(tabs(), /■ codex/u);
+      assert.match(tabs(), /codex/u);
       assert.doesNotMatch(
         tabs(),
         /Thread One|Thread Two|Working|Idle|Waiting for input/u,
@@ -1117,8 +1006,11 @@ void test(
 
       child.write('q');
       await until(
-        () => !tabs().includes('■'),
-        'return to shell clears agent indicator',
+        () =>
+          /\bsh\b/u.test(tabs()) &&
+          nameColor() === colors.accent &&
+          foreground(4, 2) === colors.fg,
+        'return to shell restores the normal tab text color',
       );
       await until(
         () =>
@@ -1133,10 +1025,8 @@ void test(
         'ordinary foreground process name is displayed in sidebar and tab',
       );
 
-      assert.ok(
-        !tabs().includes('■'),
-        'ordinary programs do not get agent indicators',
-      );
+      assert.equal(nameColor(), colors.accent);
+      assert.equal(foreground(4, 2), colors.fg);
 
       child.write('q');
       await until(

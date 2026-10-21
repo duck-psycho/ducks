@@ -8,7 +8,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { measureTextCells } from '@rezi-ui/core';
 import { defined } from '../src/defined.js';
 import { fileCandidates, fileLinkAt } from '../src/terminal/files.js';
-import { createScreen, spawnPty } from '../src/terminal/native.js';
+import { spawnPty } from '../src/terminal/native.js';
 import { signalGroup } from '../src/terminal/processes.js';
 import { SessionManager } from '../src/terminal/SessionManager.js';
 import { TerminalSelection } from '../src/terminal/TerminalSelection.js';
@@ -410,9 +410,13 @@ void test(
 
     await writeFile(mcPath, "process.title = 'mc';\n" + AGENT_FIXTURE);
 
-    const manager = new SessionManager(spawnPty, createScreen, () => {
-      /* Test stub. */
-    });
+    const manager = new SessionManager(
+      spawnPty,
+      (cols, rows) => new XtermScreen(cols, rows),
+      () => {
+        /* Test stub. */
+      },
+    );
     const place = {
       id: 'p',
       name: 'Test',
@@ -507,7 +511,7 @@ void test(
   async () => {
     const manager = new SessionManager(
       spawnPty,
-      createScreen,
+      (cols, rows) => new XtermScreen(cols, rows),
       () => {
         /* Test stub. */
       },
@@ -814,7 +818,7 @@ void test(
   async () => {
     const manager = new SessionManager(
       spawnPty,
-      createScreen,
+      (cols, rows) => new XtermScreen(cols, rows),
       () => {
         /* Test stub. */
       },

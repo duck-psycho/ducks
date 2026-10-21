@@ -174,22 +174,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // Quiet agents still need animation frames while they are working.
-  const animationTimer = setInterval(() => {
-    if (!renderReady || disposed || controller.closing) {
-      return;
-    }
-
-    for (const session of sessions.sessions.values()) {
-      if (session.activity === 'working') {
-        changed();
-
-        return;
-      }
-    }
-  }, rezi.WORKING_FRAME_MS);
-  animationTimer.unref();
-
   let fatal: unknown;
 
   const shutdown = (error?: unknown) => {
@@ -242,7 +226,6 @@ async function main(): Promise<void> {
     detach();
     detachResize();
     clearTimeout(resizeTimer);
-    clearInterval(animationTimer);
     process.off('SIGWINCH', resized);
     controller.git.dispose();
 
