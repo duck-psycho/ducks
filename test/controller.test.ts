@@ -17,6 +17,8 @@ import { defined } from '../src/defined.js';
 import { GitBranches } from '../src/GitBranches.js';
 import { defaultConfig } from '../src/model.js';
 import { PromptEditor } from '../src/PromptEditor.js';
+import { processNameFromArgv } from '../src/terminal/agents.js';
+import { shellProfile } from '../src/terminal/directory.js';
 import { NO_MODS } from '../src/terminal/input.js';
 import { SessionManager } from '../src/terminal/SessionManager.js';
 import { THEMES } from '../src/themes.js';
@@ -24,10 +26,12 @@ import { SIDEBAR_WIDTH } from '../src/ui/layout.js';
 import { renderFrame } from '../src/ui/view.js';
 import { FakePty } from './FakePty.js';
 import { FakeScreen } from './FakeScreen.js';
+import type { ForegroundProcessReader } from '../src/terminal/agents.js';
 
 function setup(
   copyText?: (text: string) => void,
   sidebarWidth = SIDEBAR_WIDTH,
+  readProcess: ForegroundProcessReader = () => Promise.resolve(undefined),
 ) {
   const config = defaultConfig();
   config.sidebarWidth = sidebarWidth;
@@ -74,8 +78,8 @@ function setup(
     async () => {
       /* Test stub. */
     },
-    undefined,
-    () => Promise.resolve([]),
+    readProcess,
+    (pid) => Promise.resolve([pid]),
   );
 
   let saved = 0;
@@ -1255,6 +1259,7 @@ void test('dialogs isolate input; cancellation preserves agents and Enter confir
 
   try {
     command('z');
+    await new Promise<void>((resolve) => setImmediate(resolve));
 
     assert.equal(controller.modal?.kind, 'menu');
 
@@ -1278,13 +1283,17 @@ void test('dialogs isolate input; cancellation preserves agents and Enter confir
     assert.equal(controller.place?.agents.length, 2);
 
     command('z');
+    await new Promise<void>((resolve) => setImmediate(resolve));
     key('down');
     key('enter');
 
     assert.equal(controller.modal, null);
     assert.equal(controller.place.agents.length, 2);
 
-    command('z');
+    renderFrame(controller);
+    const { closeRect } = defined(controller.tabHits[0]);
+    sidebarMouse(controller)(3, closeRect.x + 1, closeRect.y);
+    await new Promise<void>((resolve) => setImmediate(resolve));
     key('enter');
     await new Promise<void>((resolve) => setImmediate(resolve));
 
@@ -1294,6 +1303,33 @@ void test('dialogs isolate input; cancellation preserves agents and Enter confir
       ['b'],
     );
     assert.deepEqual([...manager.sessions.keys()], ['b', 'c']);
+  } finally {
+    await manager.shutdown();
+  }
+});
+
+void test('shell-only tabs close immediately by mouse and shortcut without switching away from the active tab', async () => {
+  const { controller, manager, command } = setup(undefined, SIDEBAR_WIDTH, () =>
+    Promise.resolve({
+      name: processNameFromArgv([shellProfile().executable]),
+      agent: null,
+    }),
+  );
+
+  try {
+    renderFrame(controller);
+    const { closeRect } = defined(controller.tabHits[1]);
+    sidebarMouse(controller)(3, closeRect.x + 1, closeRect.y);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.equal(controller.modal, null);
+    assert.equal(controller.agent?.id, 'a');
+    assert.deepEqual([...manager.sessions.keys()], ['a', 'c']);
+
+    command('z');
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    assert.equal(controller.modal, null);
+    assert.equal(controller.place?.agents.length, 0);
+    assert.deepEqual([...manager.sessions.keys()], ['c']);
   } finally {
     await manager.shutdown();
   }
@@ -1842,7 +1878,7 @@ void test('rendered UI shows agent activity as colored agent names without statu
     .map((cell) => cell.text)
     .join('');
 
-  assert.match(tabs, /codex\s+claude/u);
+  assert.match(tabs, /codex\s+×\s+claude\s+×/u);
   assert.doesNotMatch(frame.plainText(), /■/u);
   assert.doesNotMatch(tabs, /Thread One|Working|Idle|Waiting for input/u);
 

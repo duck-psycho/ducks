@@ -17,6 +17,59 @@ const place = {
 const agent = { id: 'a', name: 'Agent', profileId: 'codex' };
 const profile = defined(defaultConfig().profiles[0]);
 
+void test('shell-only detection checks live foreground and background jobs and fails closed on observation errors', async () => {
+  const child = new FakePty();
+  let observed: ForegroundProcess | undefined = {
+    name: 'zsh',
+    agent: null,
+  };
+  let groups = [child.pid];
+  let failure = false;
+  const manager = new SessionManager(
+    () => child,
+    (c, r) => new FakeScreen(c, r),
+    () => {
+      /* Test stub. */
+    },
+    () => {
+      /* Test stub. */
+    },
+    0,
+    undefined,
+    () => Promise.resolve(observed),
+    () =>
+      failure
+        ? Promise.reject(new Error('ps failed'))
+        : Promise.resolve(groups),
+  );
+
+  manager.start(agent, place, {
+    id: 'shell',
+    name: 'Shell',
+    executable: '/bin/zsh',
+    args: ['-i'],
+  });
+  try {
+    assert.equal(await manager.isShellOnly('a'), true);
+    observed = { name: 'vim', agent: null };
+    assert.equal(await manager.isShellOnly('a'), false);
+    observed = { name: 'zsh', agent: null };
+    groups = [child.pid, child.pid + 1];
+    assert.equal(await manager.isShellOnly('a'), false);
+    groups = [];
+    assert.equal(await manager.isShellOnly('a'), false);
+    groups = [child.pid];
+    failure = true;
+    assert.equal(await manager.isShellOnly('a'), false);
+    failure = false;
+    observed = undefined;
+    assert.equal(await manager.isShellOnly('a'), false);
+  } finally {
+    failure = false;
+    await manager.shutdown();
+  }
+});
+
 void test('sessions transition from stopped to running to exited/error, and restart with a fresh buffer', () => {
   const children: FakePty[] = [];
   const manager = new SessionManager(

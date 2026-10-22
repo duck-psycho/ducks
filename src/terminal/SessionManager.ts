@@ -68,6 +68,32 @@ export class SessionManager {
     this._processExited = handler;
   }
 
+  public async isShellOnly(id: string): Promise<boolean> {
+    const session = this.sessions.get(id);
+    const child = session?.process;
+    const shellName = this._activities.get(id)?.fallbackName;
+    if (!child || session.shutdownSignal !== 'SIGHUP' || !shellName) {
+      return false;
+    }
+
+    try {
+      const observed = await this._readProcess(child);
+      if (!observed || observed.agent || observed.name !== shellName) {
+        return false;
+      }
+
+      const groups = await this._readGroups(child.pid, new Set([child.pid]));
+
+      return (
+        this.sessions.get(id)?.process === child &&
+        groups.length > 0 &&
+        groups.every((group) => group === child.pid)
+      );
+    } catch {
+      return false;
+    }
+  }
+
   public async currentDirectory(id: string, fallback: string): Promise<string> {
     const child = this.sessions.get(id)?.process;
     if (child) {

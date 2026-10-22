@@ -34,6 +34,7 @@ export function renderFrame(controller: Controller): Frame {
   const frame = new Frame(c.cols, c.rows, baseStyle);
 
   c.tabHits = [];
+  c.newTabHit = null;
   c.modalHits = [];
   if (c.geometry.small) {
     frame.text(2, 2, 'Increase terminal to at least 80 × 24', {
@@ -176,16 +177,23 @@ function renderSidebar(context: FrameContext): void {
 function renderTabs(context: FrameContext): void {
   const { c, frame, geometry, colors, baseStyle } = context;
   const place = c.place;
-  const agents = place?.agents ?? [];
+  if (!place) {
+    return;
+  }
+
+  const agents = place.agents;
+  const buttonWidth = 3;
+  const buttonGap = 1;
+  const availableWidth = geometry.tabs.w - buttonWidth - buttonGap;
   // Keep the active tab in view when the tab strip overflows.
-  const activeIndex = agents.findIndex((a) => a.id === place?.activeAgentId);
+  const activeIndex = agents.findIndex((a) => a.id === place.activeAgentId);
 
   const widths = new Map<AgentDefinition, number>();
 
   const widthOf = (agent: AgentDefinition) => {
     let width = widths.get(agent);
     if (width === undefined) {
-      width = Math.min(22, Math.max(10, textWidth(processName(c, agent)) + 2));
+      width = Math.min(25, Math.max(10, textWidth(processName(c, agent)) + 5));
       widths.set(agent, width);
     }
 
@@ -193,10 +201,10 @@ function renderTabs(context: FrameContext): void {
   };
 
   let first = Math.max(0, activeIndex);
-  let used = agents[first] ? widthOf(defined(agents[first])) + 1 : 0;
+  let used = agents[first] ? widthOf(defined(agents[first])) : 0;
   while (first > 0) {
-    const width = widthOf(defined(agents[first - 1])) + 1;
-    if (used + width > geometry.tabs.w) {
+    const width = widthOf(defined(agents[first - 1]));
+    if (used + width + (first > 1 ? 2 : 0) > availableWidth) {
       break;
     }
 
@@ -212,14 +220,25 @@ function renderTabs(context: FrameContext): void {
 
   for (let i = first; i < agents.length; i++) {
     const agent = defined(agents[i]);
-    const width = Math.min(widthOf(agent), c.cols - x - 1);
+    const width = Math.min(
+      widthOf(agent),
+      geometry.tabs.x + availableWidth - x,
+    );
     if (width < 6) {
       break;
     }
 
     renderTab(context, agent, x, width);
-    x += width + 1;
+    x += width;
   }
+
+  x += buttonGap;
+  frame.text(x, geometry.tabs.y, ' + ', {
+    fg: colors.accent,
+    bg: colors.selected,
+    bold: true,
+  });
+  c.newTabHit = { x, y: geometry.tabs.y, w: buttonWidth, h: 1 };
 }
 
 function renderNotice(context: FrameContext): void {
@@ -677,10 +696,13 @@ function renderTab(
     geometry.tabs.y,
     processName(c, agent),
     { ...style, fg: status ? statusColor[status] : style.fg },
-    width - 2,
+    width - 5,
   );
+  const closeRect = { x: x + width - 3, y: geometry.tabs.y, w: 3, h: 1 };
+  frame.text(closeRect.x, closeRect.y, ' × ', style);
   c.tabHits.push({
     rect: { x, y: geometry.tabs.y, w: width, h: 1 },
+    closeRect,
     agentId: agent.id,
   });
 }

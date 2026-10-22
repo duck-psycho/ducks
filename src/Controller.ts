@@ -73,7 +73,8 @@ export class Controller {
   public message = '';
   public themeNotice = false;
   public prefixUntil = 0;
-  public tabHits: { rect: Rect; agentId: string }[] = [];
+  public tabHits: { rect: Rect; closeRect: Rect; agentId: string }[] = [];
+  public newTabHit: Rect | null = null;
   public modalHits: { rect: Rect; index: number }[] = [];
   private _prefixTimer: ReturnType<typeof setTimeout> | null = null;
   private _themeNoticeTimer: ReturnType<typeof setTimeout> | undefined;
@@ -498,6 +499,7 @@ export class Controller {
         this.config.sidebarWidth = resized.sidebar.w;
         this.sessions.resize(resized.terminal.w, resized.terminal.h);
         this.tabHits = [];
+        this.newTabHit = null;
         this._changed();
       }
     }
@@ -762,10 +764,8 @@ export class Controller {
 
     open();
   }
-  private _closeAgent(): Promise<void> | void {
-    const place = this.place,
-      agent = this.agent;
-    if (!place || !agent) {
+  private async _closeAgent(agent = this.agent): Promise<void> {
+    if (!agent) {
       return;
     }
 
@@ -776,10 +776,15 @@ export class Controller {
       this._changed();
     };
 
-    if (this.session?.process) {
+    const shellOnly = await this.sessions.isShellOnly(agent.id);
+    if (!this.sessions.sessions.has(agent.id)) {
+      return;
+    }
+
+    if (this.sessions.sessions.get(agent.id)?.process && !shellOnly) {
       this._confirm('Close this terminal?', remove);
     } else {
-      return remove();
+      await remove();
     }
   }
   private _closePlace(): Promise<void> | void {
@@ -1456,8 +1461,27 @@ export class Controller {
   }
 
   private _tabMouse(event: Extract<InputEvent, { kind: 'mouse' }>): void {
+    if (event.buttons !== 1) {
+      return;
+    }
+
+    if (this.newTabHit && inside(this.newTabHit, event.x, event.y)) {
+      this._command('a');
+
+      return;
+    }
+
     const hit = this.tabHits.find((h) => inside(h.rect, event.x, event.y));
     if (hit && this.place) {
+      if (inside(hit.closeRect, event.x, event.y)) {
+        const agent = this.place.agents.find((a) => a.id === hit.agentId);
+        if (agent) {
+          void this._perform(() => this._closeAgent(agent));
+        }
+
+        return;
+      }
+
       this.selectAgent(this.place.id, hit.agentId);
       this.focus = 'terminal';
     }
